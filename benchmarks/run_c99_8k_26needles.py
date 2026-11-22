@@ -23,10 +23,7 @@ sys.path.insert(0, os.path.join(ROOT, "benchmarks"))
 from transformers import AutoTokenizer
 from bench_vault_v3_p4_eval import make_filler_tokens  # noqa: E402
 
-QWEN_3B = (
-    "Qwen/Qwen2.5-3B-Instruct"
-    "snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
-)
+QWEN_3B = os.environ.get("QWEN_3B_DIR", "Qwen/Qwen2.5-3B-Instruct")
 BIN = os.path.join(ROOT, "benchmarks", "bench_c99_8k_26needles")
 
 

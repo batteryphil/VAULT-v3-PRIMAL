@@ -68,10 +68,19 @@ from primal.vault_primal import (
 warnings.filterwarnings("ignore", message=".*Flash Efficient attention.*")
 warnings.filterwarnings("ignore", message=".*Mem Efficient attention.*")
 
-DEFAULT_QWEN_3B = (
-    "Qwen/Qwen2.5-3B-Instruct"
-    "snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
-)
+DEFAULT_QWEN_3B = os.environ.get("QWEN_3B_DIR", "Qwen/Qwen2.5-3B-Instruct")
+
+
+def _resolve_qwen_3b_dir() -> str:
+    env_d = os.environ.get("QWEN_3B_DIR", "")
+    if env_d and os.path.isdir(env_d):
+        return env_d
+    from huggingface_hub import snapshot_download
+    try:
+        return snapshot_download("Qwen/Qwen2.5-3B-Instruct", local_files_only=True)
+    except Exception:
+        return snapshot_download("Qwen/Qwen2.5-3B-Instruct")
+
 VAULT_ROOT = "."
 VAULT_HOST_BIN = os.path.join(VAULT_ROOT, "runtime", "vault3_host")
 DEFAULT_SYSTEM_PROMPT = "You are a helpful, mathematically rigorous AI assistant."
@@ -1328,8 +1337,8 @@ def save_primal_ckpt(path: str, model: VAULTPrimalForCausalLM, engine: Q8StepEng
 def main():
     ap = argparse.ArgumentParser(description="VAULT-v3-3B Full-Parameter Shadowless PRIMAL Trainer")
     ap.add_argument("--mode", choices=["eval_base", "pilot", "train", "export_p4"], default="train")
-    ap.add_argument("--qwen_dir", default=DEFAULT_QWEN_3B)
-    ap.add_argument("--out_dir", default="primal_v7/runs/vault_v3_3b_primal")
+    ap.add_argument("--qwen_dir", default="")
+    ap.add_argument("--out_dir", default="runs/vault_v3_3b_primal")
     ap.add_argument("--resume", default="", help="Optional checkpoint .pt to resume from")
     ap.add_argument("--headroom", type=float, default=1.05)
     ap.add_argument("--window", type=int, default=4096)
@@ -1357,6 +1366,8 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--skip_final_eval", action="store_true")
     args = ap.parse_args()
+    if not args.qwen_dir or not os.path.isdir(args.qwen_dir):
+        args.qwen_dir = _resolve_qwen_3b_dir()
 
     os.makedirs(args.out_dir, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"

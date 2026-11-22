@@ -34,10 +34,19 @@ VAULT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(VAULT_ROOT, "tools"))
 import vlt3  # noqa: E402
 
-QWEN_3B_DIR = (
-    "Qwen/Qwen2.5-3B-Instruct"
-    "snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
-)
+QWEN_3B_DIR = os.environ.get("QWEN_3B_DIR", "Qwen/Qwen2.5-3B-Instruct")
+
+
+def _resolve_qwen_3b_dir() -> str:
+    env_d = os.environ.get("QWEN_3B_DIR", "")
+    if env_d and os.path.isdir(env_d):
+        return env_d
+    from huggingface_hub import snapshot_download
+    try:
+        return snapshot_download("Qwen/Qwen2.5-3B-Instruct", local_files_only=True)
+    except Exception:
+        return snapshot_download("Qwen/Qwen2.5-3B-Instruct")
+
 Q8_VLT3_SRC = os.path.join(VAULT_ROOT, "dist", "vault_v3_3b_q8_0_primal.vlt3")
 P4_VLT3_SRC = os.path.join(VAULT_ROOT, "dist", "vault_v3_3b_p4_0_primal.vlt3")
 OUT_DIR = os.path.join(VAULT_ROOT, "dist", "hf_vault_v3_3b")
@@ -555,6 +564,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
 
 
 def main():
+    global QWEN_3B_DIR
+    if not os.path.isdir(QWEN_3B_DIR):
+        QWEN_3B_DIR = _resolve_qwen_3b_dir()
     ap = argparse.ArgumentParser(description="Run VAULT-v3-3B-PRIMAL with O(1) 100K+ Segment Memory")
     ap.add_argument("--model", default=os.path.dirname(os.path.abspath(__file__)), help="Local dir or HF repo id")
     ap.add_argument("--prompt", default="", help="Single prompt to run")
@@ -831,9 +843,9 @@ def _copy_or_link(src: str, dst: str):
 
 
 def build_readme_main(metrics_summary: dict | None = None) -> str:
-    p31_path = "./primal_v7/runs/vault_v3_3b_primal_v3_1/peer_review_primal_v3_1_full_report.json"
-    p3_path = "./primal_v7/runs/vault_v3_3b_primal_v3/peer_review_primal_v3_full_report.json"
-    raw_path = "./primal_v7/runs/peer_review_v3/unconfounded_raw_baselines.json"
+    p31_path = "runs/vault_v3_3b_primal_v3_1/peer_review_primal_v3_1_full_report.json"
+    p3_path = "runs/vault_v3_3b_primal_v3/peer_review_primal_v3_full_report.json"
+    raw_path = "runs/peer_review_v3/unconfounded_raw_baselines.json"
     rul_path = os.path.join(VAULT_ROOT, "benchmarks", "peer_review_ruler_and_ablation.json")
     c99_path = os.path.join(VAULT_ROOT, "benchmarks", "peer_review_c99_8k_26needles.json")
 

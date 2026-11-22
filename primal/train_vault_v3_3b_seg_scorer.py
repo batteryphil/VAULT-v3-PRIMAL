@@ -51,10 +51,19 @@ from tokenizers import Tokenizer
 VAULT_ROOT = "."
 VAULT_TOOLS = os.path.join(VAULT_ROOT, "tools")
 VAULT_HOST_BIN = os.path.join(VAULT_ROOT, "runtime", "vault3_host")
-DEFAULT_QWEN_3B = (
-    "Qwen/Qwen2.5-3B-Instruct"
-    "snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
-)
+DEFAULT_QWEN_3B = os.environ.get("QWEN_3B_DIR", "Qwen/Qwen2.5-3B-Instruct")
+
+
+def _resolve_qwen_3b_dir() -> str:
+    env_d = os.environ.get("QWEN_3B_DIR", "")
+    if env_d and os.path.isdir(env_d):
+        return env_d
+    from huggingface_hub import snapshot_download
+    try:
+        return snapshot_download("Qwen/Qwen2.5-3B-Instruct", local_files_only=True)
+    except Exception:
+        return snapshot_download("Qwen/Qwen2.5-3B-Instruct")
+
 DEFAULT_Q8_VLT3 = os.path.join(VAULT_ROOT, "dist", "vault_v3_3b_q8_0_primal.vlt3")
 DEFAULT_P4_VLT3 = os.path.join(VAULT_ROOT, "dist", "vault_v3_3b_p4_0_primal.vlt3")
 
@@ -522,8 +531,8 @@ def main():
     ap = argparse.ArgumentParser(description="Train O(1) VAULT v3 SegmentScorer for VAULT-v3-3B PRIMAL")
     ap.add_argument("--q8_vlt3", default=DEFAULT_Q8_VLT3)
     ap.add_argument("--p4_vlt3", default=DEFAULT_P4_VLT3)
-    ap.add_argument("--qwen_dir", default=DEFAULT_QWEN_3B)
-    ap.add_argument("--out_dir", default="primal_v7/runs/vault_v3_3b_seg_scorer")
+    ap.add_argument("--qwen_dir", default="")
+    ap.add_argument("--out_dir", default="runs/vault_v3_3b_seg_scorer")
     ap.add_argument("--steps", type=int, default=300)
     ap.add_argument("--batch_docs", type=int, default=4)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -533,6 +542,8 @@ def main():
     ap.add_argument("--seg_budget", type=int, default=1024)
     ap.add_argument("--seed", type=int, default=2026)
     args = ap.parse_args()
+    if not args.qwen_dir or not os.path.isdir(args.qwen_dir):
+        args.qwen_dir = _resolve_qwen_3b_dir()
 
     os.makedirs(args.out_dir, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"

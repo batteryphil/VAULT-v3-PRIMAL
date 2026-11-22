@@ -924,7 +924,7 @@ def main():
     p.add_argument("--max_flip_frac_end", type=float, default=0.0001)
     p.add_argument("--decay", type=float, default=0.85)
     p.add_argument("--skip_part1", action="store_true")
-    p.add_argument("--out_json", type=str, default="primal_v7/runs/vault_v3_p4_benchmark.json")
+    p.add_argument("--out_json", type=str, default="runs/vault_v3_p4_benchmark.json")
     args = p.parse_args()
 
     tok = AutoTokenizer.from_pretrained(QWEN_SNAP, local_files_only=True)

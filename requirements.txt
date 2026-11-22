@@ -1,7 +1,13 @@
+# Core Python dependencies for VAULT v3, PRIMAL v3.1, WSP, and .vlt3 exporters
+# (Note: the freestanding C99 runtime in `runtime/` requires ZERO Python or third-party dependencies!)
 torch>=2.4.0
 transformers>=4.44.0
+tokenizers>=0.19.0
+accelerate>=0.33.0
 safetensors>=0.4.4
 huggingface_hub>=0.25.0
 datasets>=2.20.0
 numpy>=1.26.0
-bitsandbytes>=0.43.0
+
+# Optional (only needed if running the continuous 8-bit AdamW control baseline in primal/run_primal_v3_1_onpolicy_and_controls.py):
+# bitsandbytes>=0.43.0

@@ -39,7 +39,7 @@ from tokenizers import Tokenizer
 from transformers import AutoModelForCausalLM
 
 from primal.train_vault_v3_3b_primal import (
-    DEFAULT_QWEN_3B,
+    _resolve_qwen_3b_dir,
     GSM8K_SYSTEM_PROMPT,
     GSM8K_USER_SUFFIX,
     _encode_pair_lm_eval,
@@ -538,7 +538,8 @@ def eval_gsm8k_full_hf_bf16(
 
 
 def main():
-    out_dir = "primal_v7/runs/peer_review_v3"
+    DEFAULT_QWEN_3B = _resolve_qwen_3b_dir()
+    out_dir = "runs/peer_review_v3"
     os.makedirs(out_dir, exist_ok=True)
     device = "cuda"
 
@@ -546,7 +547,7 @@ def main():
     base_dir = snapshot_download("Qwen/Qwen2.5-3B")
     print(f"      Resolved Qwen2.5-3B Base -> {base_dir}", flush=True)
 
-    tok = Tokenizer.from_file(os.path.join(DEFAULT_QWEN_3B, "tokenizer.json"))
+    tok = Tokenizer.from_file(os.path.join(_resolve_qwen_3b_dir, "tokenizer.json"))
     wt_bundle = build_wikitext2_val(tok, seq_len=2048)
     tasks = load_all_9_tasks()
 
@@ -562,7 +563,7 @@ def main():
 
     # 2. Evaluate Qwen2.5-3B-Instruct (Raw BF16) on Full Splits + Full GSM8K-1319 (1024 tok)
     print("\n[3/3] Loading Qwen/Qwen2.5-3B-Instruct (Untouched BF16)...", flush=True)
-    m_inst = AutoModelForCausalLM.from_pretrained(DEFAULT_QWEN_3B, dtype=torch.bfloat16).to(device).eval()
+    m_inst = AutoModelForCausalLM.from_pretrained(_resolve_qwen_3b_dir, dtype=torch.bfloat16).to(device).eval()
     inst_rep, inst_vecs = eval_9task_full_and_1k(
         m_inst, tok, tasks, wt_bundle, label="Qwen/Qwen2.5-3B-Instruct (Untouched BF16)", device=device
     )

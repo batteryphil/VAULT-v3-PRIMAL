@@ -509,7 +509,7 @@ def compute_ppl(model: AutoModelForCausalLM, tok: AutoTokenizer, texts: Sequence
 
 def run_surgery(args: argparse.Namespace) -> None:
     t0 = time.time()
-    src_path = snapshot_download("deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B")
+    src_path = args.base_model if os.path.isdir(args.base_model) else snapshot_download(args.base_model)
     print(f"Loading {src_path} on CUDA (bfloat16)...", flush=True)
     tok = AutoTokenizer.from_pretrained(src_path)
     if tok.pad_token is None:
@@ -706,7 +706,8 @@ def run_surgery(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--save-dir", default="./models/deepseek-r1-1.5b-wsp")
+    ap = argparse.ArgumentParser(description="Direct Weight-Space Uncensoring (WSP + Velvet ROME) for DeepSeek-R1-Distill-Qwen-1.5B")
+    ap.add_argument("--base-model", default="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B", help="HF repo ID or local path to base model")
+    ap.add_argument("--save-dir", default="./models/deepseek-r1-1.5b-wsp", help="Output directory for uncensored BF16 checkpoint")
     ap.add_argument("--force-save", action="store_true")
     run_surgery(ap.parse_args())

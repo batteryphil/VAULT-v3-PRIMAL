@@ -64,7 +64,7 @@ from primal.run_primal_v3_and_controls import (
     paired_bootstrap_diff_ci,
 )
 from primal.train_vault_v3_3b_primal import (
-    DEFAULT_QWEN_3B,
+    _resolve_qwen_3b_dir,
     DEFAULT_SYSTEM_PROMPT,
     VAULT_ROOT,
     _norm_dedup_key,
@@ -87,9 +87,9 @@ from primal.vault_primal import (
     load_pretrained_qwen2_into_primal_q8,
 )
 
-V3_DIR = "primal_v7/runs/vault_v3_3b_primal_v3"
-OUT_DIR = "primal_v7/runs/vault_v3_3b_primal_v3_1"
-SCORER_CKPT = "primal_v7/runs/vault_v3_3b_seg_scorer/vault_v3_3b_seg_scorer.pt"
+V3_DIR = "runs/vault_v3_3b_primal_v3"
+OUT_DIR = "runs/vault_v3_3b_primal_v3_1"
+SCORER_CKPT = "runs/vault_v3_3b_seg_scorer/vault_v3_3b_seg_scorer.pt"
 VAULT_DIST = "./dist"
 
 
@@ -700,13 +700,14 @@ def eval_exact_fp32_q8_canary(vlt3_q8_path: str, qwen_dir: str, tok: Tokenizer, 
 
 
 def main():
+    DEFAULT_QWEN_3B = _resolve_qwen_3b_dir()
     os.makedirs(OUT_DIR, exist_ok=True)
     device = "cuda"
     torch.manual_seed(42)
     random.seed(42)
     np.random.seed(42)
 
-    tok = Tokenizer.from_file(os.path.join(DEFAULT_QWEN_3B, "tokenizer.json"))
+    tok = Tokenizer.from_file(os.path.join(_resolve_qwen_3b_dir, "tokenizer.json"))
     eos_id = tok.token_to_id("<|endoftext|>")
     wt_bundle = build_wikitext2_val(tok, seq_len=2048)
     val_sft_samples = build_heldout_sft_val(
@@ -718,7 +719,7 @@ def main():
     # Phase 1: Step-radius-matched 8-Bit AdamW (`lr_peak = 2e-4`, 15 steps) on Round-1/2 off-policy stream
     offp_saved = torch.load(os.path.join(V3_DIR, "primal_v3_50step_stream.pt"), map_location="cpu", weights_only=False)
     adam_lr2e4_offpolicy = run_step_matched_adamw8bit_offpolicy_15steps(
-        DEFAULT_QWEN_3B, offp_saved["batches"], wt_bundle, tok, lr_peak=2.0e-4, device=device
+        _resolve_qwen_3b_dir, offp_saved["batches"], wt_bundle, tok, lr_peak=2.0e-4, device=device
     )
     del offp_saved
     gc.collect()
@@ -726,15 +727,15 @@ def main():
     # Phase 2: Build On-Policy Rejection-Sampled Qwen2.5-3B-Instruct Stream (`25` steps = `409,600` tokens)
     onp_cache = os.path.join(OUT_DIR, "primal_v3_1_onpolicy_stream.pt")
     batches, gsm8k_val200, onp_meta = build_or_load_onpolicy_stream(
-        DEFAULT_QWEN_3B, tok, cache_path=onp_cache, total_micro_batches=100, batch_size=2, seq_len=2048, seed=2027, device=device
+        _resolve_qwen_3b_dir, tok, cache_path=onp_cache, total_micro_batches=100, batch_size=2, seq_len=2048, seed=2027, device=device
     )
 
     # Phase 3: Train Lossless PRIMAL v3.1 (Sparse `rebalance_scales` -> flat ~9.28 GiB peak VRAM!)
-    with open(os.path.join(DEFAULT_QWEN_3B, "config.json")) as f:
+    with open(os.path.join(_resolve_qwen_3b_dir, "config.json")) as f:
         qc = json.load(f)
     cfg = VAULTPrimalConfig.from_qwen_config(qc, window=4096)
     model = VAULTPrimalForCausalLM(cfg, skip_init=True, grad_checkpoint=True, ce_chunk_size=512)
-    load_pretrained_qwen2_into_primal_q8(model, DEFAULT_QWEN_3B, headroom=1.05)
+    load_pretrained_qwen2_into_primal_q8(model, _resolve_qwen_3b_dir, headroom=1.05)
     q0_snap = {n: m.q.clone() for n, m in model.named_modules() if isinstance(m, _Q8BlockMixin)}
 
     model = model.to(device)
@@ -765,7 +766,7 @@ def main():
     )
 
     wt0 = evaluate_wikitext2_bpb(model, wt_bundle[0], wt_bundle[1], wt_bundle[2], 2048, device, batch_size=2)
-    gv0 = eval_gsm8k_val200_primal(model, DEFAULT_QWEN_3B, tok, gsm8k_val200, device=device)
+    gv0 = eval_gsm8k_val200_primal(model, _resolve_qwen_3b_dir, tok, gsm8k_val200, device=device)
     print(f"\n[PRIMAL-v3.1 STEP 0] WT2 BPB={wt0['wt2_bpb']:.4f} (PPL={wt0['wt2_word_ppl']:.2f}) | GSM8K-TrainVal200={gv0['acc']:.2f}%", flush=True)
 
     best_ckpt_path = os.path.join(OUT_DIR, "best_ckpt.pt")
@@ -810,7 +811,7 @@ def main():
         if step in (10, 15, 20, 25):
             wt_v = evaluate_wikitext2_bpb(model, wt_bundle[0], wt_bundle[1], wt_bundle[2], 2048, device, batch_size=2)
             vs_v = evaluate_heldout_sft_loss(model, val_sft_samples, eos_id, device, batch_size=4)
-            gv_v = eval_gsm8k_val200_primal(model, DEFAULT_QWEN_3B, tok, gsm8k_val200, device=device)
+            gv_v = eval_gsm8k_val200_primal(model, _resolve_qwen_3b_dir, tok, gsm8k_val200, device=device)
             # Balanced validation Pareto: preserves GSM8K-TrainVal200 while rewarding WT2 BPB improvement!
             pareto = gv_v["acc"] - 120.0 * wt_v["wt2_bpb"]
             print(
@@ -873,9 +874,9 @@ def main():
 
     q8_raw_vlt3 = os.path.join(OUT_DIR, "vault_v3_3b_q8_0_primal_raw.vlt3")
     p4_raw_vlt3 = os.path.join(OUT_DIR, "vault_v3_3b_p4_0_primal_raw.vlt3")
-    export_vault_primal_vlt3(model, DEFAULT_QWEN_3B, q8_raw_vlt3, model_name="VAULT-v3-3B-q8_0-primal-v3.1")
+    export_vault_primal_vlt3(model, _resolve_qwen_3b_dir, q8_raw_vlt3, model_name="VAULT-v3-3B-q8_0-primal-v3.1")
     calib = [wt_bundle[0][i * 1024 : (i + 1) * 1024].unsqueeze(0) for i in range(16)]
-    export_hessian_p4_0_from_primal_3b(model, DEFAULT_QWEN_3B, p4_raw_vlt3, model_name="VAULT-v3-3B-p4_0-primal-v3.1", calib_batches=calib, device=device)
+    export_hessian_p4_0_from_primal_3b(model, _resolve_qwen_3b_dir, p4_raw_vlt3, model_name="VAULT-v3-3B-p4_0-primal-v3.1", calib_batches=calib, device=device)
     model = model.cpu()
     del model
     gc.collect()
@@ -895,7 +896,7 @@ def main():
     print(f"[REPACK v3.1] Q8_0={info_q8['file_size_mb']} MiB ({info_q8['file_size_mb']/1024:.3f} GiB) | P4_0={info_p4['file_size_mb']} MiB ({info_p4['file_size_mb']/1024:.3f} GiB)", flush=True)
 
     # Phase 4A: Full-Split Evaluation on PRIMAL v3.1 (Q8_0 -> BF16 Safetensors Path)
-    hf_q8_bf16 = load_hf_from_vlt3_dtype(q8_dst, DEFAULT_QWEN_3B, dtype=torch.bfloat16, device=device)
+    hf_q8_bf16 = load_hf_from_vlt3_dtype(q8_dst, _resolve_qwen_3b_dir, dtype=torch.bfloat16, device=device)
     q8_rep, q8_vecs = eval_9task_full_and_1k(hf_q8_bf16, tok, tasks, wt_bundle, label="VAULT-v3-3B-PRIMAL v3.1 (Q8_0 -> BF16)", device=device)
     q8_gsm, q8_gsm_vec = eval_gsm8k_full_hf_bf16(hf_q8_bf16, tok, max_new_tokens=1024, batch_size=64, device=device)
     q8_rep["gsm8k_1319"] = q8_gsm
@@ -905,10 +906,10 @@ def main():
     torch.cuda.empty_cache()
 
     # Phase 4B: Exact `.vlt3` V3_Q8_0 (FP32 Product) Evaluation
-    exact_q8_fp32 = eval_exact_fp32_q8_canary(q8_dst, DEFAULT_QWEN_3B, tok, tasks, wt_bundle, device=device)
+    exact_q8_fp32 = eval_exact_fp32_q8_canary(q8_dst, _resolve_qwen_3b_dir, tok, tasks, wt_bundle, device=device)
 
     # Phase 4C: Full-Split Evaluation on PRIMAL v3.1 (P4_0, 1.805 GiB)
-    hf_p4_bf16 = load_hf_from_vlt3_dtype(p4_dst, DEFAULT_QWEN_3B, dtype=torch.bfloat16, device=device)
+    hf_p4_bf16 = load_hf_from_vlt3_dtype(p4_dst, _resolve_qwen_3b_dir, dtype=torch.bfloat16, device=device)
     p4_rep, p4_vecs = eval_9task_full_and_1k(hf_p4_bf16, tok, tasks, wt_bundle, label="VAULT-v3-3B-PRIMAL v3.1 (P4_0, 1.805 GiB)", device=device)
     p4_gsm, p4_gsm_vec = eval_gsm8k_full_hf_bf16(hf_p4_bf16, tok, max_new_tokens=1024, batch_size=64, device=device)
     p4_rep["gsm8k_1319"] = p4_gsm
@@ -919,7 +920,7 @@ def main():
 
     # Paired bootstrap CIs & McNemar vs. Instruct, Base, and Round-1/2 8-bit AdamW
     paired_stats = {}
-    rv = torch.load("primal_v7/runs/peer_review_v3/raw_baseline_item_vectors.pt", map_location="cpu", weights_only=False)
+    rv = torch.load("runs/peer_review_v3/raw_baseline_item_vectors.pt", map_location="cpu", weights_only=False)
     v3_iv = torch.load(os.path.join(V3_DIR, "primal_v3_item_vectors.pt"), map_location="cpu", weights_only=False)
     for cname, ref_v in [
         ("v3_1_q8_vs_instruct_bf16", rv["instruct_vecs"]),

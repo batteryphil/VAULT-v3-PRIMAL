@@ -46,10 +46,7 @@ sys.path.insert(0, os.path.join(ROOT, "benchmarks"))
 
 from bench_vault_v3_p4_eval import eval_long_context_retrieval, greedy_chat, load_vlt3_model  # noqa: E402
 
-QWEN_3B = (
-    "Qwen/Qwen2.5-3B-Instruct"
-    "snapshots/aa8e72537993ba99e69dfaafa59ed015b17504d1"
-)
+QWEN_3B = os.environ.get("QWEN_3B_DIR", "Qwen/Qwen2.5-3B-Instruct")
 
 # Independent essay paragraphs (zero overlap with FineWeb-Edu training cache or synthetic ID templates)
 ESSAY_PARAGRAPHS = [
