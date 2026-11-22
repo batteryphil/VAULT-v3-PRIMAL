@@ -21,10 +21,18 @@ Complete reference implementation, freestanding zero-libc C99 engine (`x86_64 AV
 
 ## Live Hugging Face Releases
 
-| Model Family | `transformers` (`BF16` + `O(1)` Engine + Source) | Standalone `.vlt3` C99 Binaries (`V3_P4_0` & `V3_Q8_0`) |
+### 1. Reasoning LLMs (`O(1)` 100K+ Memory · WSP Uncensored · C99 `.vlt3`)
+| Model Family | `transformers` (`BF16` + `O(1)` Engine + Source) | Standalone `.vlt3` C99 Binaries (`Q8_0` / `P4_0` / `Q2_0` / `T1_58`) |
 |---|---|---|
 | **`VAULT-v3-3B-PRIMAL` (`3.09B`)** | [`batteryphil/VAULT-v3-3B-PRIMAL`](https://huggingface.co/batteryphil/VAULT-v3-3B-PRIMAL) (`5.77 GiB`) | [`batteryphil/VAULT-v3-3B-PRIMAL-VLT3`](https://huggingface.co/batteryphil/VAULT-v3-3B-PRIMAL-VLT3) (`1.81 GiB` `P4_0` / `3.06 GiB` `Q8_0`) |
-| **`VAULT-v3-DeepSeek-R1-1.5B-PRIMAL` (`1.78B`)** | [`batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL`](https://huggingface.co/batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL) (`3.33 GiB`) | [`batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL-VLT3`](https://huggingface.co/batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL-VLT3) (`1.18 GiB` `P4_0` / `1.77 GiB` `Q8_0`) |
+| **`VAULT-v3-DeepSeek-R1-1.5B-PRIMAL` (`1.78B`)** | [`batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL`](https://huggingface.co/batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL) (`3.33 GiB`) | [`batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL-VLT3`](https://huggingface.co/batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL-VLT3) (`650 MiB` `Q2_0` / `1.18 GiB` `P4_0` / `1.77 GiB` `Q8_0`) |
+
+### 2. Multi-Modal Text-to-Speech (`Linear` + `Conv1d` + `ConvTranspose1d` + `DiT` Diffusion · 1-Command `infer.py`)
+| TTS Model Family | Hugging Face Repository (`SafeTensors` + Audio Samples + `infer.py`) | Quantized Checkpoints Included |
+|---|---|---|
+| **`Tiny-Voca` (`4.54M`, `24 kHz`)** | [`batteryphil/VAULT-PRIMAL-Tiny-Voca-4.5M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-Tiny-Voca-4.5M) | **`2.64 MB` `V3_P4_0`** (`113.9x` RT, `0%` WER loss) & **`1.38 MB` `V3_Q2_0 + PRIMAL`** (`0%` WER loss!) |
+| **`VITS` (`29.04M` 1D-CNN/Flow/HiFi-GAN, `16 kHz`)** | [`batteryphil/VAULT-PRIMAL-VITS-29M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-VITS-29M) | **`16.52 MB` `V3_P4_0`** (`-10.4%` Mel err vs `Q4_0`) & **`8.75 MB` `V3_Q2_0 + PRIMAL`** (`-121.5%` WER recovery) |
+| **`F5-TTS v1 Base` (`337.1M` `ConvNeXt V2` + `22L DiT`, `24 kHz`)** | [`batteryphil/VAULT-PRIMAL-F5-TTS-337M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-F5-TTS-337M) | **`192.0 MB` `V3_P4_0 + PRIMAL`** (`0%` CER loss vs `1.35 GB`) & **`138.9 MB` `V3_Q2_0 + PRIMAL`** (`100% -> 6.78%` WER) |
 
 ---
 
