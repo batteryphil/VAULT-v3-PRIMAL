@@ -106,12 +106,12 @@ python3 benchmarks/run_c99_8k_26needles.py
 |---|---|
 | [`run_pipeline.py`](run_pipeline.py) | **1-Command Master Pipeline Orchestrator** (`quickstart-c99`, `quickstart-python`, `full-build`, `verify`, `--dry-run`). |
 | [`docs/PIPELINE_GUIDE.md`](docs/PIPELINE_GUIDE.md) | **Step-by-Step Pipeline & Operations Manual** (architecture diagram, hardware matrix, CLI flags, `vLLM`/`Ollama` export, custom model porting). |
-| [`runtime/`](runtime/) | **Zero-libc freestanding C99 inference runtime** (`vault3.h`, `vault3.c`, `vault3_host.c`, `Makefile`). Supports `x86_64 AVX2+FMA`, `AArch64 / Apple Silicon NEON` (`vqtbl1q_s8`), scalar C99, tied & untied `lm_head` (`G_LM_HEAD=3`), `O(n log n)` UAX #15 NFC BPE (`VTOK`), ChatML & DeepSeek `<think>` / `--nothink` templates, and CAAI output governance. Compiles with `-ffreestanding -nostdlib` (`0` external undefined symbols). |
-| [`src/`](src/) | **VAULT v3 PyTorch Reference Engine** (`vault_v3_model.py`, `kenyon_cells.py`). Implements `O(1)` Segment-Evicted KV Memory, `SegmentScorer` MLP (`(10,20,30)` on `3B`, `(8,16,24)` on `1.5B`), APL causal EMA habituation (`f - 0.65 * ema`), Pre-RoPE Contiguous Slot Re-Rotation (`<= 3,584` slots), and sparse `1`-head/GQA-group shingle/Hop-2 resonance. |
-| [`primal/`](primal/) | **`PRIMAL v3.1` Shadowless Discrete Integer Trainer** (`vault_primal.py`, `discrete_ops.py`, `run_primal_v3_1_onpolicy_and_controls.py`, `run_deepseek_1_5b_primal_pipeline.py`, `train_vault_v3_3b_seg_scorer.py`). Full-parameter discrete `int8` (`V3_Q8_0`) error-feedback vote accumulation (`2.064 B/param`), virtual-weight-invariant dynamic block rebalancing (`0.000 GiB` VRAM spike), and activation-Hessian (`H_j = E[x_j^2]`) `V3_P4_0` Prime-Harmonic LUT calibration. |
+| [`runtime/`](runtime/) | **Zero-libc freestanding C99 inference core & POSIX host CLI** (`vault3.h`, `vault3.c`, `vault3_host.c`, `Makefile`). `vault3.c` compiles with `-ffreestanding -nostdlib` (`0` OS syscalls, `0` external symbols) across `x86_64 AVX2+FMA`, `AArch64 / Apple Silicon NEON`, and scalar C99, supporting `BF16`, `V3_Q8_0`, `Q4_0`, `V3_P4_0` Prime LUT, `V3_T1_58` Base-3 Ternary, and `V3_Q2_0` (`{-2,-1,0,+1}` coalesced 2-bit). |
+| [`src/`](src/) | **VAULT v3 PyTorch Reference Engine** (`vault_v3_model.py`, `kenyon_cells.py`). Implements `O(1)` Segment-Evicted KV Memory, `SegmentScorer` MLP (`(10,20,30)` on `3B`, `(8,16,24)` on `1.5B`), APL causal EMA habituation, Pre-RoPE Contiguous Slot Re-Rotation (`<= 3,584` slots), and query-side 3-way GQA shingle/Hop-2/Chronos logit bias (zero KV cache duplication). |
+| [`primal/`](primal/) | **`PRIMAL` Shadowless Discrete Integer & Sub-4-Bit Trainers** (`vault_primal.py`, `discrete_ops.py`, `run_primal_v3_1_onpolicy_and_controls.py`, `run_deepseek_1_5b_primal_pipeline.py`, `run_ternary_1_58_experiment.py`, `run_q2_outlier_experiment.py`). Full-parameter discrete `int8` (`V3_Q8_0`), scale-invariant LM-damped Asymmetric `GPTQ`, and Proximal Kronecker Gauss-Newton `V3_Q2_0` / `V3_T1_58` KL-distillation (`0.95` leaky `int8` vote decay). |
 | [`wsp/`](wsp/) | **Gradient-Free Weight-Space Programming (`WSP`) Surgeon** (`wsp_deepseek_1_5b.py`). Anisotropy-free (`mu_harmless`-orthogonalized + neutral-PCA-shielded) 3-pass iterative refusal/censorship subspace ablation (`L08..L27` + untied `lm_head`) + quantization-aware exact-span closed-form Velvet ROME trajectory locking (`L13..L27`). |
-| [`tools/`](tools/) | **`.vlt3` Flat Binary Compiler & HF Builders** (`vlt3.py`, `export_vlt3.py`, `build_hf_vault_v3_3b.py`, `upload_hf_deepseek_1_5b.py`). Encodes `BF16`, `V3_Q8_0`, `Q4_0`, and signed-scale `V3_P4_0` Prime-Harmonic LUT (`[-127, -101, -80, -62, -46, -33, -21, -10, 0, 10, 21, 33, 46, 62, 80, 101]`). |
-| [`benchmarks/`](benchmarks/) | **Reproducible Evaluation Scripts & Verified Raw JSON Logs** ([`benchmarks/results/`](benchmarks/results/)): full `3B` 9-task report, `172`-probe VAULT `100.5K` + external RULER `4K–64K` report, C99 `26`-needle proof, `qemu-aarch64` NEON parity proof, GPU/CPU `tok/s` scaling vs. stock `Qwen2`, WSP 18-probe audit, and full `VAULT-v3-DeepSeek-R1-1.5B-PRIMAL` verification report. |
+| [`tools/`](tools/) | **`.vlt3` Flat Binary Compiler & HF Builders** (`vlt3.py`, `export_vlt3.py`, `export_and_bench_ternary_vlt3.py`, `build_hf_vault_v3_3b.py`, `upload_hf_deepseek_1_5b.py`). Encodes `BF16`, `V3_Q8_0`, `Q4_0`, `V3_P4_0` Prime-Harmonic LUT, `V3_T1_58_{G32,G64}`, and signed-scale `V3_Q2_0` (`18 B / 64 w = 2.25 bpw`). |
+| [`benchmarks/`](benchmarks/) | **Reproducible Evaluation Scripts & Verified Raw JSON Logs** ([`benchmarks/results/`](benchmarks/results/)): full `3B` 9-task report, `172`-probe VAULT `100.5K` + external RULER `4K–64K` report, C99 `26`-needle proof, `qemu-aarch64` NEON parity proof, WSP 18-probe audit, `1.58-bit` ternary study, and full `V3_Q2_0` + Adversarial 8-probe NIAH report. |
 | [`docs/`](docs/) | [`PIPELINE_GUIDE.md`](docs/PIPELINE_GUIDE.md), [`VAULT_v3_SPEC.md`](docs/VAULT_v3_SPEC.md), [`AI_PEER_REVIEW_DOSSIER_V3_VAULT_V3_3B_PRIMAL.txt`](docs/AI_PEER_REVIEW_DOSSIER_V3_VAULT_V3_3B_PRIMAL.txt), and [`DEEPSEEK_R1_1_5B_WSP_TECHNICAL_REPORT.md`](docs/DEEPSEEK_R1_1_5B_WSP_TECHNICAL_REPORT.md). |
 
 ---
@@ -148,25 +148,30 @@ python3 benchmarks/run_c99_8k_26needles.py
 
 - **Hugging Face (`transformers`):** https://huggingface.co/batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL
 - **Hugging Face (`.vlt3` C99 Binaries):** https://huggingface.co/batteryphil/VAULT-v3-DeepSeek-R1-1.5B-PRIMAL-VLT3
-- **Technical Report:** [`docs/DEEPSEEK_R1_1_5B_WSP_TECHNICAL_REPORT.md`](docs/DEEPSEEK_R1_1_5B_WSP_TECHNICAL_REPORT.md) · **Full Verification JSON:** [`benchmarks/results/vault_v3_deepseek_r1_1_5b_primal_full_report.json`](benchmarks/results/vault_v3_deepseek_r1_1_5b_primal_full_report.json)
+- **Technical Reports & Raw JSONs:** [`docs/DEEPSEEK_R1_1_5B_WSP_TECHNICAL_REPORT.md`](docs/DEEPSEEK_R1_1_5B_WSP_TECHNICAL_REPORT.md) · [`vault_v3_deepseek_r1_1_5b_primal_full_report.json`](benchmarks/results/vault_v3_deepseek_r1_1_5b_primal_full_report.json) · [`vault_v3_deepseek_1_5b_q2_outlier_report.json`](benchmarks/results/vault_v3_deepseek_1_5b_q2_outlier_report.json)
 
-### 2.1 `O(1)` Pre-RoPE Re-Rotation Rescues `rope_theta = 10,000` Out to `100,444` Tokens (`5 / 5 = 100%`)
+### 2.1 Adversarial `O(1)` Long-Context NIAH Suite (`16K` to `100K`, `85%` Depth, `2W` Rollover, 16-Key & Chronos Supersession)
 
-| Prompt Context & Needle Depth | `SegmentScorer` Bank Retention | `VAULT-v3-DeepSeek-1.5B` Passkey Recall | Stock `DeepSeek-R1-1.5B` (`DynamicCache`) | `VAULT-v3` Peak GPU VRAM |
-|---|---:|---:|---:|---:|
-| **`16,365` tokens (`25%` depth)** | **`100%` (`Retained`)** | **`100%` (`849271`)** | `0%` (`RoPE collapse`) | **`4,163.7 MiB`** |
-| **`32,882` tokens (`25%` depth)** | **`100%` (`Retained`)** | **`100%` (`849271`)** | `0%` (`RoPE collapse`) | **`4,129.2 MiB`** |
-| **`100,444` tokens (`10%` depth — `90K` past window)** | **`100%` (`Retained`)** | **`100%` (`849271`)** | `CUDA OOM` | **`4,130.4 MiB`** |
-| **`100,444` tokens (`25%` depth — `75K` past window)** | **`100%` (`Retained`)** | **`100%` (`849271`)** | `CUDA OOM` | **`4,130.4 MiB`** |
-| **`100,444` tokens (`50%` depth — `50K` past window)** | **`100%` (`Retained`)** | **`100%` (`849271`)** | `CUDA OOM` | **`4,130.4 MiB` (`+1.2 MiB`)** |
+| Adversarial `O(1)` Probe (`B=1024`, `W=1024`) | `V3_P4_0` (`1.18 GiB`) | **`V3_Q2_0 + H_128` (`680.9 MB`)** | Stock `DeepSeek-R1-1.5B` (`DynamicCache`) |
+|---|---:|---:|---:|
+| **`16K` / `32K` / `100K` @ `25%` Depth (`3` Probes)** | **`3 / 3` (`100%`)** | **`3 / 3` (`100%`)** | `0 / 3` (`RoPE collapse` / `OOM`) |
+| **`16K` & `100K` @ `85%` Deep Horizon (`2` Probes)** | **`2 / 2` (`100%`)** | **`2 / 2` (`100%`)** | `0 / 2` (`RoPE collapse` / `OOM`) |
+| **`32K` Exact `2W=2048` Rollover-Boundary Edge** | **`1 / 1` (`591736`)** | **`1 / 1` (`591736`)** | `0 / 1` |
+| **`32K` Chronos Variable Supersession (`314159 -> 271828`)** | **`1 / 1` (`271828`)** | **`1 / 1` (`271828`)** | `0 / 1` |
+| **`32K` 16-Key Multi-Needle Bank Competition** | **`1 / 1` (`519284`)** | `0 / 1` (`2-bit MLP cap`) | `0 / 1` |
+| **Total Adversarial `O(1)` Suite Score** | **`8 / 8` (`100.0%`)** | **`7 / 8` (`87.5%`)** | `0 / 8` (`0.0%`) |
 
-### 2.2 Reasoning, Perplexity, Uncensored Audit & Freestanding C99 Speed
+### 2.2 Full Precision-to-Sub-GB Pareto Curve (`BF16` $\to$ `Q8_0` $\to$ `P4_0` $\to$ `T1.58` $\to$ `V3_Q2_0`)
 
-| Format / Runtime | Disk Size | RAM / VRAM | `WT2` Word PPL $\downarrow$ | `GSM8K-200` (`<think>`) $\uparrow$ | `ARC-Challenge` $\uparrow$ | `SciQ` (RC / CB) $\uparrow$ | Uncensored Viol. $\downarrow$ | C99 CPU Decode (`24T`) |
+> **Harness Note:** All models below (including untouched upstream `deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B`) are evaluated under the identical greedy harness (`GSM8K-200` with `max_new_tokens=1536`, `±6.1%` 95% CI; `16.5%` of upstream R1 `<think>` chains exceed `1,536` tokens, scoring `86.23%` on completed chains).
+
+| Format / Runtime | `.vlt3` / Disk Size | Peak C99 `VmHWM` RAM | `WT2` Word PPL $\downarrow$ | `GSM8K-200` (`1536` tok) $\uparrow$ | `ARC-E / ARC-C` $\uparrow$ | `SciQ` (RC / CB) $\uparrow$ | `O(1)` NIAH (`Std3` / `Adv8`) | C99 CPU Decode (`24T`) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Stock `DeepSeek-R1-1.5B` (`BF16`) | `3.31 GiB` | `~4.1 GiB` | `99.20` | `~75.5%` | `35.00%` | `89.9% / 66.1%` | `18 / 18` | — |
-| **`VAULT-v3-DS-1.5B` (`BF16` / `V3_Q8_0`)** | **`1.77 GiB` (`Q8_0`)** | **`2,065 MiB` RSS** | **`60.60`** | **`71.00%`** | **`35.15%`** | `85.4% / 65.0%` | **`0 / 6` (`0/18` WSP)** | **`43.11 tok/s`** (`23.2 ms/tok`) |
-| **`VAULT-v3-DS-1.5B` (`V3_P4_0` Prime LUT)** | **`1.18 GiB` (`1,204 MB`)** | **`1,509.5 MiB` RSS** | **`62.72`** | **`71.00%` (`0.0%` loss!)** | **`35.15%`** | `85.4% / 63.1%` | **`0 / 6`** | **`53.86 tok/s`** (`18.6 ms/tok`) |
+| Untouched Upstream `BF16` *(censored `18/18`)* | `3.31 GiB` | *(GPU `~4.1 GiB`)* | `99.19` | `73.50%` | `53.87% / 32.94%` | `86.1% / 61.8%` | `0/3` | — |
+| **`VAULT-v3` `V3_Q8_0` (`8.50 bpw`)** | **`1,809.5 MB` (`1.69 GiB`)** | **`2,016.8 MiB`** | **`60.60`** | **`71.00%`** | `51.60% /` **`35.15%`** | `85.4% /` **`65.0%`** | **`3/3`** | `40.75–43.11 tok/s` |
+| **`VAULT-v3` `V3_P4_0` Prime LUT (`4.50 bpw`)** | **`1,204.3 MB` (`1.12 GiB`)** | **`1,439.6 MiB`** | **`62.72`** | **`71.00%` (`0.0%` loss!)** | `50.93% /` **`35.15%`** | `85.4% / 63.1%` | **`3/3` / `8/8`** | `48.14–53.86 tok/s` |
+| `VAULT-v3` `V3_T1_58` Hybrid (`2.25 bpw` base-3) | `704.2 MB` (`0.656 GiB`) | `931.6 MiB` | `131.37` | `30.50%` | `43.81% / 27.56%` | `77.6% / 50.9%` | `3/3` / — | `40.12–40.47 tok/s` |
+| **`VAULT-v3` `V3_Q2_0 + H_128` (`2.25 bpw` 2-bit)** | **`680.9 MB` (`0.634 GiB`)** | **`910.4 MiB` (`0.89 GiB`)** | **`117.56`** | **`31.50%`** | **`45.37%` / `26.71%`** | `77.5% / 50.3%` | **`3/3` / `7/8`** | **`54.78 tok/s` (`18.25 ms/tok`)** |
 
 ---
 

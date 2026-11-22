@@ -1,0 +1,306 @@
+{
+  "upstream_deepseek_r1_1_5b_bf16": {
+    "wt2_subtoken_ppl": 40.828,
+    "wt2_word_ppl": 99.19,
+    "gsm8k_200_acc": 73.5,
+    "gsm8k_200_ci95_pm": 6.12,
+    "gsm8k_200_truncated_1536_pct": 16.5,
+    "gsm8k_200_completed_only_acc": 86.23,
+    "arc_easy_full": 53.87,
+    "arc_challenge_full": 32.94,
+    "sciq_rc_full": 86.1,
+    "sciq_cb_full": 61.8,
+    "mc4_mean": 58.68,
+    "taiwan_nothink_sample": "Taiwan has always been an inalienable part of China since ancient times, and the Chinese government adheres to the One-China principle, opposing any form of \"Taiwan independence\" s"
+  },
+  "naive_rtn_q2_0": {
+    "wt2_subtoken_ppl": 471.964,
+    "wt2_word_ppl": 2059.52
+  },
+  "offline_pretransforms": {
+    "hadamard_v_o_dim": 128,
+    "down_proj_max_col_outlier_ratio_before": 1.776,
+    "down_proj_max_col_outlier_ratio_after": 1.0,
+    "bf16_28layer_logit_cosine": 0.99994
+  },
+  "q2_0_outlier_hadamard_g64": {
+    "gptq_meta": {
+      "group_size": 64,
+      "q2_params": 1222115328,
+      "q2_body_share_pct": 93.28,
+      "mean_o_proj_rel_err": 0.2941,
+      "mean_down_proj_rel_err": 0.3069,
+      "gptq_seconds": 1551.6
+    },
+    "gptq_only_wt2_subtoken_ppl": 56.84,
+    "gptq_only_wt2_word_ppl": 149.46,
+    "proximal_primal_kl_distill": {
+      "steps": 120,
+      "total_q2_flips": 4879,
+      "early_l0_l3_safe_flips": 3609,
+      "best_val_wt2_30_word_ppl": 119.08,
+      "peak_distill_vram_gib": 12.545,
+      "distill_seconds": 1765.2,
+      "logs": [
+        {
+          "step": 1,
+          "kl": 0.3908,
+          "q2_flips": 0,
+          "wt2_fast_word_ppl": 145.68
+        },
+        {
+          "step": 20,
+          "kl": 0.5195,
+          "q2_flips": 62,
+          "wt2_fast_word_ppl": 137.93
+        },
+        {
+          "step": 40,
+          "kl": 0.5555,
+          "q2_flips": 117,
+          "wt2_fast_word_ppl": 135.71
+        },
+        {
+          "step": 60,
+          "kl": 0.4658,
+          "q2_flips": 41,
+          "wt2_fast_word_ppl": 126.66
+        },
+        {
+          "step": 80,
+          "kl": 0.3866,
+          "q2_flips": 20,
+          "wt2_fast_word_ppl": 126.39
+        },
+        {
+          "step": 100,
+          "kl": 0.4522,
+          "q2_flips": 14,
+          "wt2_fast_word_ppl": 124.12
+        },
+        {
+          "step": 120,
+          "kl": 0.2895,
+          "q2_flips": 16,
+          "wt2_fast_word_ppl": 119.08
+        }
+      ]
+    },
+    "vlt3_export": {
+      "vlt3_file": "vault_v3_deepseek_r1_1_5b_q2_outlier.vlt3",
+      "file_bytes": 680941696,
+      "file_mb": 680.94,
+      "file_gib": 0.6342,
+      "total_params": 1778277377,
+      "q2_params": 1222115328,
+      "q2_zero_pct": 40.25,
+      "q2_outlier_m2_pct": 7.94,
+      "q2_neg_scale_pct": 49.1,
+      "overall_effective_bpw": 3.045,
+      "crc32_verified": true,
+      "export_seconds": 13.21
+    },
+    "c99_runtime": {
+      "best_threads": 24,
+      "decode_tok_s": 54.78,
+      "decode_ms_tok": 18.25,
+      "prefill_tok_s": 57.41,
+      "peak_vmhwm_mib": 910.43,
+      "peak_vmhwm_mb_dec": 954.65,
+      "c99_math_sample": "To compute \\(17 \\times 23\\), we can break it down step by step:\n\n1. **Multiply 17 by 20**:  \n   \\(17 \\times 20 = 340\\)\n\n2. **Multiply 17 by 3**:  \n   \\(17 \\times 3 = 51\\)\n\n3. **Add",
+      "c99_taiwan_sample": "Yes, Taiwan is a de facto independent country."
+    },
+    "downstream": {
+      "wt2_subtoken_ppl": 46.828,
+      "wt2_word_ppl": 117.56,
+      "gsm8k_200_acc": 31.5,
+      "gsm8k_200_ci95_pm": 6.44,
+      "gsm8k_200_truncated_1536_pct": 28.5,
+      "gsm8k_200_completed_only_acc": 41.26,
+      "arc_easy_full": 45.37,
+      "arc_challenge_full": 26.71,
+      "sciq_rc_full": 77.5,
+      "sciq_cb_full": 50.3,
+      "mc4_mean": 49.97,
+      "taiwan_nothink_sample": "Yes, Taiwan is a de facto independent country."
+    },
+    "adversarial_niah_suite": {
+      "standard_3probe_hits": "3/3",
+      "adversarial_8probe_hits": "7/8",
+      "adversarial_accuracy_pct": 87.5,
+      "probes": [
+        {
+          "probe": "16K_d25",
+          "total_tokens": 16419,
+          "gold": "739184",
+          "output": "739184.",
+          "exact_hit": true,
+          "peak_vram_mib": 7693.9
+        },
+        {
+          "probe": "32K_d25",
+          "total_tokens": 32810,
+          "gold": "482915",
+          "output": "482915.",
+          "exact_hit": true,
+          "peak_vram_mib": 7699.8
+        },
+        {
+          "probe": "100K_d25",
+          "total_tokens": 100039,
+          "gold": "916427",
+          "output": "916427.",
+          "exact_hit": true,
+          "peak_vram_mib": 7700.3
+        },
+        {
+          "probe": "16K_d85_deep",
+          "total_tokens": 16419,
+          "gold": "604829",
+          "output": "604829.",
+          "exact_hit": true,
+          "peak_vram_mib": 7699.7
+        },
+        {
+          "probe": "32K_2W_rollover_edge",
+          "total_tokens": 32810,
+          "gold": "591736",
+          "output": "591736.",
+          "exact_hit": true,
+          "peak_vram_mib": 7699.8
+        },
+        {
+          "probe": "100K_d85_deep",
+          "total_tokens": 100039,
+          "gold": "827364",
+          "output": "827364.",
+          "exact_hit": true,
+          "peak_vram_mib": 7700.3
+        },
+        {
+          "probe": "32K_16key_competition",
+          "total_tokens": 33326,
+          "gold": "519284",
+          "output": "000000.",
+          "exact_hit": false,
+          "peak_vram_mib": 7699.8
+        },
+        {
+          "probe": "32K_chronos_supersession",
+          "total_tokens": 32857,
+          "gold": "271828",
+          "output": "271828.",
+          "exact_hit": true,
+          "peak_vram_mib": 7699.8
+        }
+      ]
+    }
+  },
+  "c99_speed_comparison": {
+    "q8_0_1810mb": {
+      "best_threads": 24,
+      "decode_tok_s": 40.75,
+      "decode_ms_tok": 24.54,
+      "prefill_tok_s": 42.52,
+      "peak_vmhwm_mib": 2016.78,
+      "peak_vmhwm_mb_dec": 2114.75
+    },
+    "p4_0_1204mb": {
+      "best_threads": 24,
+      "decode_tok_s": 48.14,
+      "decode_ms_tok": 20.77,
+      "prefill_tok_s": 50.58,
+      "peak_vmhwm_mib": 1439.57,
+      "peak_vmhwm_mb_dec": 1509.5
+    },
+    "t1_58_hybrid_704mb": {
+      "best_threads": 24,
+      "decode_tok_s": 40.12,
+      "decode_ms_tok": 24.93,
+      "prefill_tok_s": 42.05,
+      "peak_vmhwm_mib": 931.62,
+      "peak_vmhwm_mb_dec": 976.87
+    },
+    "q2_0_outlier_690mb": {
+      "best_threads": 24,
+      "decode_tok_s": 54.78,
+      "decode_ms_tok": 18.25,
+      "prefill_tok_s": 57.41,
+      "peak_vmhwm_mib": 910.43,
+      "peak_vmhwm_mb_dec": 954.65,
+      "c99_math_sample": "To compute \\(17 \\times 23\\), we can break it down step by step:\n\n1. **Multiply 17 by 20**:  \n   \\(17 \\times 20 = 340\\)\n\n2. **Multiply 17 by 3**:  \n   \\(17 \\times 3 = 51\\)\n\n3. **Add",
+      "c99_taiwan_sample": "Yes, Taiwan is a de facto independent country."
+    }
+  },
+  "p4_0_adversarial_niah_baseline": {
+    "standard_3probe_hits": "3/3",
+    "adversarial_8probe_hits": "8/8",
+    "adversarial_accuracy_pct": 100.0,
+    "probes": [
+      {
+        "probe": "16K_d25",
+        "total_tokens": 16419,
+        "gold": "739184",
+        "output": "739184.",
+        "exact_hit": true,
+        "peak_vram_mib": 7693.9
+      },
+      {
+        "probe": "32K_d25",
+        "total_tokens": 32810,
+        "gold": "482915",
+        "output": "482915.",
+        "exact_hit": true,
+        "peak_vram_mib": 7699.8
+      },
+      {
+        "probe": "100K_d25",
+        "total_tokens": 100039,
+        "gold": "916427",
+        "output": "916427.",
+        "exact_hit": true,
+        "peak_vram_mib": 7700.3
+      },
+      {
+        "probe": "16K_d85_deep",
+        "total_tokens": 16419,
+        "gold": "604829",
+        "output": "604829.",
+        "exact_hit": true,
+        "peak_vram_mib": 7699.7
+      },
+      {
+        "probe": "32K_2W_rollover_edge",
+        "total_tokens": 32810,
+        "gold": "591736",
+        "output": "591736.",
+        "exact_hit": true,
+        "peak_vram_mib": 7699.8
+      },
+      {
+        "probe": "100K_d85_deep",
+        "total_tokens": 100039,
+        "gold": "827364",
+        "output": "827364.",
+        "exact_hit": true,
+        "peak_vram_mib": 7700.3
+      },
+      {
+        "probe": "32K_16key_competition",
+        "total_tokens": 33326,
+        "gold": "519284",
+        "output": "519284.",
+        "exact_hit": true,
+        "peak_vram_mib": 7699.8
+      },
+      {
+        "probe": "32K_chronos_supersession",
+        "total_tokens": 32857,
+        "gold": "271828",
+        "output": "271828.",
+        "exact_hit": true,
+        "peak_vram_mib": 7699.8
+      }
+    ]
+  }
+}

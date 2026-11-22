@@ -217,6 +217,11 @@ static uint64_t dtype_nbytes(uint32_t dt, uint64_t n, int *ok) {
         if ((n % 64ull) != 0 || blks > (~0ull) / 15ull) { *ok = 0; return 0; }
         return blks * 15ull;
     }
+    case V3_Q2_0: {
+        uint64_t blks = n / 64ull;
+        if ((n % 64ull) != 0 || blks > (~0ull) / 18ull) { *ok = 0; return 0; }
+        return blks * 18ull;
+    }
     default:
         *ok = 0;
         return 0;
@@ -239,7 +244,7 @@ static int is_f32(const v3_tensor *t) { return t->dtype == V3_F32; }
 static int is_matmul_dtype(const v3_tensor *t) {
     return t->dtype == V3_F32 || t->dtype == V3_F16 || t->dtype == V3_BF16 ||
            t->dtype == V3_Q8_0 || t->dtype == V3_Q4_0 || t->dtype == V3_P4_0 ||
-           t->dtype == V3_T1_58_G32 || t->dtype == V3_T1_58_G64;
+           t->dtype == V3_T1_58_G32 || t->dtype == V3_T1_58_G64 || t->dtype == V3_Q2_0;
 }
 
 static int check_tensor_finite(const uint8_t *p, uint32_t dt, uint64_t n, int full_scan) {
@@ -297,10 +302,12 @@ static int check_tensor_finite(const uint8_t *p, uint32_t dt, uint64_t n, int fu
             if (!is_finite_f16_bits(rd16(p + b * stride))) return 0;
         return 1;
     }
-    case V3_T1_58_G64: {
+    case V3_T1_58_G64:
+    case V3_Q2_0: {
         uint64_t blks = n / 64ull;
+        uint64_t stride = (dt == V3_Q2_0) ? 18ull : 15ull;
         for (uint64_t b = 0; b < blks; b++)
-            if (!is_finite_f16_bits(rd16(p + b * 15ull))) return 0;
+            if (!is_finite_f16_bits(rd16(p + b * stride))) return 0;
         return 1;
     }
     default:
@@ -394,7 +401,7 @@ int v3_load(v3_model *m, const uint8_t *buf, uint64_t size, int verify_crc) {
         uint64_t want = dtype_nbytes(dt, n, &ok);
         if (!ok) return V3_E_DTYPE;
         if ((dt == V3_Q8_0 || dt == V3_Q4_0 || dt == V3_P4_0 || dt == V3_T1_58_G32) && (dims[ndim - 1] % QK != 0)) return V3_E_SHAPE;
-        if (dt == V3_T1_58_G64 && (dims[ndim - 1] % 64u != 0)) return V3_E_SHAPE;
+        if ((dt == V3_T1_58_G64 || dt == V3_Q2_0) && (dims[ndim - 1] % 64u != 0)) return V3_E_SHAPE;
         if (want != nb) return V3_E_SHAPE;
         if (off % FILE_ALIGN || off < data_off || nb > data_off + data_size - off) return V3_E_BOUNDS;
         if (off < prev_end) return V3_E_BOUNDS;
@@ -913,6 +920,64 @@ static float row_dot(const v3_tensor *w, uint32_t r, const float *x, uint32_t co
 #endif
         break;
     }
+    case V3_Q2_0: {
+        const uint8_t *p = w->data + (uint64_t)r * (cols / 64u) * 18u;
+#ifdef __AVX2__
+        __m256 sum = _mm256_setzero_ps();
+        const __m128i m03 = _mm_set1_epi8(0x03);
+        const __m128i m2  = _mm_set1_epi8(2);
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 18) {
+            const float *xb = x + b * 64u;
+            __m128i raw = _mm_loadu_si128((const __m128i *)(const void *)(p + 2));
+            __m128i c0 = _mm_sub_epi8(_mm_and_si128(raw, m03), m2);
+            __m128i c1 = _mm_sub_epi8(_mm_and_si128(_mm_srli_epi16(raw, 2), m03), m2);
+            __m128i c2 = _mm_sub_epi8(_mm_and_si128(_mm_srli_epi16(raw, 4), m03), m2);
+            __m128i c3 = _mm_sub_epi8(_mm_and_si128(_mm_srli_epi16(raw, 6), m03), m2);
+            __m256 bs0 = V3_FMADD(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_srli_si128(c0, 8))), _mm256_loadu_ps(xb + 8),
+                                  _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(c0)), _mm256_loadu_ps(xb + 0)));
+            __m256 bs1 = V3_FMADD(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_srli_si128(c1, 8))), _mm256_loadu_ps(xb + 24),
+                                  _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(c1)), _mm256_loadu_ps(xb + 16)));
+            __m256 bs2 = V3_FMADD(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_srli_si128(c2, 8))), _mm256_loadu_ps(xb + 40),
+                                  _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(c2)), _mm256_loadu_ps(xb + 32)));
+            __m256 bs3 = V3_FMADD(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_srli_si128(c3, 8))), _mm256_loadu_ps(xb + 56),
+                                  _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(c3)), _mm256_loadu_ps(xb + 48)));
+            __m256 bs = _mm256_add_ps(_mm256_add_ps(bs0, bs1), _mm256_add_ps(bs2, bs3));
+            sum = V3_FMADD(_mm256_set1_ps(g_f16[rd16(p)]), bs, sum);
+        }
+        acc = hsum256(sum);
+#elif defined(V3_USE_NEON)
+        float32x4_t sum = vdupq_n_f32(0.0f);
+        const uint8x16_t m03 = vdupq_n_u8(0x03u);
+        const int8x16_t m2 = vdupq_n_s8(2);
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 18) {
+            const float *xb = x + b * 64u;
+            uint8x16_t raw = vld1q_u8(p + 2);
+            int8x16_t c0 = vsubq_s8(vreinterpretq_s8_u8(vandq_u8(raw, m03)), m2);
+            int8x16_t c1 = vsubq_s8(vreinterpretq_s8_u8(vandq_u8(vshrq_n_u8(raw, 2), m03)), m2);
+            int8x16_t c2 = vsubq_s8(vreinterpretq_s8_u8(vandq_u8(vshrq_n_u8(raw, 4), m03)), m2);
+            int8x16_t c3 = vsubq_s8(vreinterpretq_s8_u8(vshrq_n_u8(raw, 6)), m2);
+            float32x4_t bs0 = vaddq_f32(neon_block16_s8_f32(c0, xb + 0), neon_block16_s8_f32(c1, xb + 16));
+            float32x4_t bs1 = vaddq_f32(neon_block16_s8_f32(c2, xb + 32), neon_block16_s8_f32(c3, xb + 48));
+            sum = V3_NEON_FMADD(sum, vdupq_n_f32(g_f16[rd16(p)]), vaddq_f32(bs0, bs1));
+        }
+        acc = hsum_neon(sum);
+#else
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 18) {
+            const uint8_t *q = p + 2;
+            const float *xb = x + b * 64u;
+            float s = 0.0f;
+            for (uint32_t j = 0; j < 16u; j++) {
+                uint8_t v = q[j];
+                s += (float)((int)(v & 3u) - 2) * xb[j];
+                s += (float)((int)((v >> 2) & 3u) - 2) * xb[j + 16u];
+                s += (float)((int)((v >> 4) & 3u) - 2) * xb[j + 32u];
+                s += (float)((int)(v >> 6) - 2) * xb[j + 48u];
+            }
+            acc += g_f16[rd16(p)] * s;
+        }
+#endif
+        break;
+    }
     default: break;
     }
     return acc;
@@ -1009,6 +1074,21 @@ static void embed_row(float *out, const v3_tensor *w, uint32_t r) {
             const int8_t *tv12 = g_trit5[p[14]];
             for (uint32_t k = 0; k < 4; k++)
                 ob[60 + k] = tv12[k] > 0 ? dsc : (tv12[k] < 0 ? -dsc : 0.0f);
+        }
+        break;
+    }
+    case V3_Q2_0: {
+        const uint8_t *p = w->data + (uint64_t)r * (cols / 64u) * 18u;
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 18) {
+            float dsc = g_f16[rd16(p)];
+            float *ob = out + b * 64u;
+            for (uint32_t j = 0; j < 16u; j++) {
+                uint8_t v = p[2 + j];
+                ob[j]       = dsc * (float)((int)(v & 3u) - 2);
+                ob[j + 16u] = dsc * (float)((int)((v >> 2) & 3u) - 2);
+                ob[j + 32u] = dsc * (float)((int)((v >> 4) & 3u) - 2);
+                ob[j + 48u] = dsc * (float)((int)(v >> 6) - 2);
+            }
         }
         break;
     }

@@ -27,13 +27,13 @@ ALIGN = 64
 ENDIAN_TAG = 0x01020304
 
 # dtypes
-F32, F16, BF16, Q8_0, Q4_0, P4_0, T1_58_G32, T1_58_G64 = 0, 1, 2, 8, 9, 10, 11, 12
+F32, F16, BF16, Q8_0, Q4_0, P4_0, T1_58_G32, T1_58_G64, Q2_0 = 0, 1, 2, 8, 9, 10, 11, 12, 13
 DTYPE_NAMES = {
     F32: "F32", F16: "F16", BF16: "BF16", Q8_0: "Q8_0", Q4_0: "Q4_0", P4_0: "P4_0",
-    T1_58_G32: "T1_58_G32", T1_58_G64: "T1_58_G64",
+    T1_58_G32: "T1_58_G32", T1_58_G64: "T1_58_G64", Q2_0: "Q2_0",
 }
 QK = 32  # block size for Q8_0 / Q4_0 / P4_0 / T1_58_G32
-QK64 = 64  # block size for T1_58_G64 (1.875 bpw including FP16 scale)
+QK64 = 64  # block size for T1_58_G64 / Q2_0
 
 # 16-level Prime-Harmonic int8 LUT (p_k^-0.40 cumulative prime reciprocals for first 8 primes,
 # exact 0 at index 8; decoded in 1 cycle via AVX2 VPSHUFB in runtime/vault3.c).
@@ -110,13 +110,14 @@ def tensor_name(tid: int) -> str:
 
 
 # ==============================================================================
-# Quantization (GGML Q8_0 / Q4_0 + Prime-Harmonic P4_0 + Base-3 Ternary 1.58-Bit)
+# Quantization (GGML Q8_0 / Q4_0 + Prime-Harmonic P4_0 + Ternary 1.58 + Asymmetric Q2_0)
 # ==============================================================================
 
 Q8_DT = np.dtype([("d", "<f2"), ("q", "i1", (QK,))])          # 34 bytes / 32 weights
 Q4_DT = np.dtype([("d", "<f2"), ("q", "u1", (QK // 2,))])     # 18 bytes / 32 weights
 T1_58_G32_DT = np.dtype([("d", "<f2"), ("q", "u1", (7,))])    #  9 bytes / 32 weights (2.250 bpw w/ scale)
 T1_58_G64_DT = np.dtype([("d", "<f2"), ("q", "u1", (13,))])   # 15 bytes / 64 weights (1.875 bpw w/ scale)
+Q2_0_DT = np.dtype([("d", "<f2"), ("q", "u1", (16,))])        # 18 bytes / 64 weights (2.250 bpw w/ signed FP16 scale, {-2,-1,0,+1})
 
 
 def quantize_q8_0(w: np.ndarray) -> bytes:
@@ -305,6 +306,83 @@ def dequantize_t1_58_g64(buf: bytes, n: int) -> np.ndarray:
     return (trits * b["d"].astype(np.float32)[:, None]).reshape(-1)
 
 
+def pack_q2_0(q_i8: np.ndarray, d_f16: np.ndarray) -> bytes:
+    """
+    Losslessly pack exact 2-bit asymmetric codes q_i8 in {-2, -1, 0, +1} and signed FP16
+    block scales d_f16 into V3_Q2_0 (group_size=64, 18 bytes / 64 weights = 2.250 bpw).
+    Planar 4x16 crumb layout: byte j holds (q[j]+2) | ((q[j+16]+2)<<2) | ((q[j+32]+2)<<4) | ((q[j+48]+2)<<6).
+    """
+    q = np.clip(q_i8.astype(np.int8), -2, 1).reshape(-1, QK64)
+    n_blk = q.shape[0]
+    u = (q + 2).astype(np.uint8).reshape(n_blk, 4, 16)
+    pk = (u[:, 0] | (u[:, 1] << 2) | (u[:, 2] << 4) | (u[:, 3] << 6)).astype(np.uint8)
+    out = np.empty(n_blk, dtype=Q2_0_DT)
+    out["d"] = d_f16.astype("<f2").reshape(n_blk)
+    out["q"] = pk
+    return out.tobytes()
+
+
+def quantize_q2_0(w: np.ndarray) -> bytes:
+    """
+    Signed-scale Lloyd-refined 2-bit Asymmetric Outlier quantization (18 bytes / 64 weights).
+    Tests both +d and -d scales per 64-weight block so the -2 codepoint aligns dynamically
+    with whichever tail (positive or negative) carries larger outlier energy.
+    """
+    x_np = w.astype(np.float32).reshape(-1, QK64)
+    n_blk = x_np.shape[0]
+    ratios = [
+        0.40, 0.50, 0.60, 0.72, 1.00,
+        -0.40, -0.50, -0.60, -0.72, -1.00,
+    ]
+    use_gpu = torch.cuda.is_available() and n_blk >= 16384
+    dev = "cuda" if use_gpu else "cpu"
+    q_all = np.empty((n_blk, QK64), dtype=np.int8)
+    d_all = np.empty(n_blk, dtype=np.float16)
+    step = 262144
+    with torch.no_grad():
+        for b0 in range(0, n_blk, step):
+            xb = torch.from_numpy(x_np[b0 : b0 + step]).to(dev)
+            m = xb.shape[0]
+            amax = xb.abs().amax(dim=1)
+            best_err = torch.full((m,), float("inf"), device=dev, dtype=torch.float32)
+            best_d = torch.zeros(m, device=dev, dtype=torch.float16)
+            best_q = torch.zeros((m, QK64), device=dev, dtype=torch.int8)
+            nz = amax > 0.0
+            if nz.any():
+                for r in ratios:
+                    d_f16 = (amax * r).to(torch.float16)
+                    for _ in range(3):
+                        d_f32 = d_f16.float()
+                        inv = torch.where(d_f32 != 0.0, 1.0 / torch.where(d_f32 != 0.0, d_f32, torch.ones_like(d_f32)), torch.zeros_like(d_f32))
+                        qf = torch.clamp(torch.round(xb * inv.unsqueeze(1)), -2.0, 1.0)
+                        den = (qf * qf).sum(dim=1)
+                        num = (xb * qf).sum(dim=1)
+                        d_upd = torch.where(den > 0.0, num / torch.where(den > 0.0, den, torch.ones_like(den)), torch.zeros_like(den))
+                        d_f16 = d_upd.to(torch.float16)
+                    d_f32 = d_f16.float()
+                    inv = torch.where(d_f32 != 0.0, 1.0 / torch.where(d_f32 != 0.0, d_f32, torch.ones_like(d_f32)), torch.zeros_like(d_f32))
+                    qi = torch.clamp(torch.round(xb * inv.unsqueeze(1)), -2.0, 1.0).to(torch.int8)
+                    err = (qi.float() * d_f32.unsqueeze(1) - xb).pow(2).sum(dim=1)
+                    imp = nz & (err < best_err)
+                    best_err = torch.where(imp, err, best_err)
+                    best_d = torch.where(imp, d_f16, best_d)
+                    best_q = torch.where(imp.unsqueeze(1), qi, best_q)
+            q_all[b0 : b0 + step] = best_q.cpu().numpy()
+            d_all[b0 : b0 + step] = best_d.cpu().numpy()
+    return pack_q2_0(q_all, d_all)
+
+
+def dequantize_q2_0(buf: bytes, n: int) -> np.ndarray:
+    b = np.frombuffer(buf, dtype=Q2_0_DT, count=n // QK64)
+    raw = b["q"]
+    c0 = (raw & 0x03).astype(np.int8) - 2
+    c1 = ((raw >> 2) & 0x03).astype(np.int8) - 2
+    c2 = ((raw >> 4) & 0x03).astype(np.int8) - 2
+    c3 = ((raw >> 6) & 0x03).astype(np.int8) - 2
+    q = np.concatenate([c0, c1, c2, c3], axis=1).astype(np.float32)
+    return (q * b["d"].astype(np.float32)[:, None]).reshape(-1)
+
+
 def nbytes_for(dtype: int, n: int) -> int:
     if dtype == F32:
         return 4 * n
@@ -322,6 +400,9 @@ def nbytes_for(dtype: int, n: int) -> int:
     if dtype == T1_58_G64:
         assert n % QK64 == 0
         return (n // QK64) * T1_58_G64_DT.itemsize
+    if dtype == Q2_0:
+        assert n % QK64 == 0
+        return (n // QK64) * Q2_0_DT.itemsize
     raise ValueError(dtype)
 
 
@@ -343,6 +424,8 @@ def encode_tensor(t: torch.Tensor, dtype: int) -> bytes:
         return quantize_t1_58_g32(a.numpy())
     if dtype == T1_58_G64:
         return quantize_t1_58_g64(a.numpy())
+    if dtype == Q2_0:
+        return quantize_q2_0(a.numpy())
     raise ValueError(dtype)
 
 
@@ -365,6 +448,8 @@ def decode_tensor(buf: bytes, dtype: int, shape: Tuple[int, ...]) -> torch.Tenso
         a = dequantize_t1_58_g32(buf, n)
     elif dtype == T1_58_G64:
         a = dequantize_t1_58_g64(buf, n)
+    elif dtype == Q2_0:
+        a = dequantize_q2_0(buf, n)
     else:
         raise ValueError(dtype)
     return torch.from_numpy(a.reshape(shape))
@@ -479,7 +564,7 @@ def choose_dtype(name: str, fmt: str, n_layers: int = 0) -> int:
     if fmt == "f32":
         return F32
     if name in ("embed_tokens.weight", "lm_head.weight"):
-        if fmt in ("t1_58_hybrid", "t1_58_g64"):
+        if fmt in ("t1_58_hybrid", "t1_58_g64", "q2_outlier"):
             return P4_0
         return {"bf16": BF16, "q8_0": Q8_0, "q4_0": Q8_0, "p4_0": Q8_0}[fmt]   # embed & output head stay >= 8-bit in 4/8-bit modes
     if name.startswith("layers."):
@@ -488,6 +573,12 @@ def choose_dtype(name: str, fmt: str, n_layers: int = 0) -> int:
     else:
         li, kind = -1, name
     if kind in MATMUL_KINDS:
+        if fmt == "q2_outlier":
+            if kind in ("self_attn.k_proj.weight", "self_attn.v_proj.weight"):
+                return Q8_0
+            if kind == "self_attn.q_proj.weight":
+                return Q8_0 if (n_layers >= 8 and li in (0, 1, n_layers - 2, n_layers - 1)) else P4_0
+            return Q2_0
         if fmt == "t1_58_hybrid":
             if kind in ("self_attn.k_proj.weight", "self_attn.v_proj.weight"):
                 return Q8_0
@@ -529,7 +620,7 @@ def write_vlt3(
             dt = choose_dtype(nm, fmt, n_layers=n_layers_cfg)
             if dt in (Q8_0, Q4_0, P4_0, T1_58_G32) and t.shape[-1] % QK != 0:
                 dt = BF16
-            elif dt == T1_58_G64 and t.shape[-1] % QK64 != 0:
+            elif dt in (T1_58_G64, Q2_0) and t.shape[-1] % QK64 != 0:
                 dt = BF16
             data = encode_tensor(t, dt)
         assert len(data) == nbytes_for(dt, t.numel())
@@ -560,7 +651,7 @@ def write_vlt3(
     flags = (1 if cfg.tie_embeddings else 0) | (4 if seg_n_feat > 0 else 0)
     fmt_map = {
         "f32": F32, "bf16": BF16, "q8_0": Q8_0, "q4_0": Q4_0, "p4_0": P4_0,
-        "t1_58_hybrid": T1_58_G32, "t1_58_g64": T1_58_G64,
+        "t1_58_hybrid": T1_58_G32, "t1_58_g64": T1_58_G64, "q2_outlier": Q2_0,
     }
     hdr_vals = dict(
         magic=MAGIC, version=VERSION, header_size=HEADER_SIZE, endian_tag=ENDIAN_TAG,
@@ -651,6 +742,10 @@ def _check_finite_payload(buf: memoryview, dt: int, n: int, tid: int) -> None:
         b = np.frombuffer(buf, dtype=T1_58_G64_DT, count=n // QK64)
         if not np.isfinite(b["d"]).all():
             raise VLT3Error(f"tensor {tid}: non-finite T1_58_G64 scale")
+    elif dt == Q2_0:
+        b = np.frombuffer(buf, dtype=Q2_0_DT, count=n // QK64)
+        if not np.isfinite(b["d"]).all():
+            raise VLT3Error(f"tensor {tid}: non-finite Q2_0 scale")
 
 
 def read_vlt3(path: str, check_crc: bool = True) -> VLT3File:
