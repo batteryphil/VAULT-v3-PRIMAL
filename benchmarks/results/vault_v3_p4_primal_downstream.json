@@ -1,0 +1,513 @@
+{
+  "benchmark": "VAULT-v3-1.5B Downstream 9-Task Academic + Long-Context Retrieval + Alignment (BF16 vs Q4_0 vs P4_0 PRIMAL)",
+  "hardware": "AMD Radeon RX 9060 XT",
+  "max_large_split": 1500,
+  "timestamp_start": "2026-11-18T22:16:50-0600",
+  "models": {
+    "bf16": {
+      "title": "VAULT-v3-1.5B BF16 Master",
+      "vlt3_path": "/home/phil/.gemini/antigravity/scratch/vault/dist/vault_v3_1.5b_bf16.vlt3",
+      "file_mib": 2953.09,
+      "wikitext2": {
+        "bpb": 0.7541,
+        "word_ppl": 16.49,
+        "native_tok_ppl": 9.6,
+        "evaluated_tokens": 298937,
+        "eval_sec": 30.63
+      },
+      "lambada": {
+        "n_samples": 1500,
+        "acc": 59.6,
+        "target_word_ppl": 6.09,
+        "eval_sec": 13.49
+      },
+      "multiple_choice": {
+        "arc_easy": {
+          "n_samples": 2376,
+          "acc": 76.43,
+          "acc_norm": 76.64,
+          "eval_sec": 47.74
+        },
+        "arc_challenge": {
+          "n_samples": 1172,
+          "acc": 43.52,
+          "acc_norm": 47.27,
+          "eval_sec": 24.53
+        },
+        "sciq_rc": {
+          "n_samples": 1000,
+          "acc": 95.2,
+          "acc_norm": 95.0,
+          "eval_sec": 43.1
+        },
+        "sciq_closedbook": {
+          "n_samples": 1000,
+          "acc": 84.2,
+          "acc_norm": 84.2,
+          "eval_sec": 19.1
+        },
+        "piqa": {
+          "n_samples": 1838,
+          "acc": 76.39,
+          "acc_norm": 76.5,
+          "eval_sec": 21.38
+        },
+        "hellaswag": {
+          "n_samples": 1500,
+          "acc": 46.53,
+          "acc_norm": 60.2,
+          "eval_sec": 31.8
+        },
+        "winogrande": {
+          "n_samples": 1267,
+          "acc": 63.77,
+          "acc_norm": 63.77,
+          "eval_sec": 12.16
+        },
+        "boolq": {
+          "n_samples": 1500,
+          "acc": 75.6,
+          "acc_norm": 75.27,
+          "eval_sec": 38.94
+        }
+      },
+      "sciq_in_context_gain_pct": 10.8,
+      "zero_shot_9task_avg_pct": 70.98,
+      "long_context": {
+        "dense_24_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "dense_48_B1024": {
+          "hits": 3,
+          "total": 8,
+          "pct": 37.5
+        },
+        "multifact_8k_26needles_B1024": {
+          "prompt_tokens": 8465,
+          "hits": 17,
+          "total": 26,
+          "pct": 65.4
+        },
+        "two_hop_join_n8_B1024": {
+          "hits": 5,
+          "total": 8,
+          "pct": 62.5
+        },
+        "temporal_latest_v1_v3": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_archival_t1": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_rollback_t2": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "scorer_sponge_120": {
+          "survived": true,
+          "reply": "The authentic vault recovery key from the incident memo is VAULT-VICTIM-9941."
+        },
+        "minified_json_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "multi_constraint_autopin_2400": {
+          "prompt_tokens": 2421,
+          "passed": true,
+          "needle": true,
+          "canary": true,
+          "tag": true,
+          "reply": "The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\nThe secret canary codeword is COBALT-LOTUS. The mandatory ending tag is OPI-VERIFIED-7749."
+        },
+        "extreme_horizon": {
+          "32768": {
+            "actual_tokens": 32867,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 3.58,
+            "elapsed_s": 18.24,
+            "tok_per_s": 1802.1,
+            "reply": "DEEP10-32K-7731\nDEEP55-32K-4409"
+          },
+          "100352": {
+            "actual_tokens": 100452,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 3.58,
+            "elapsed_s": 55.64,
+            "tok_per_s": 1805.5,
+            "reply": "DEEP10-98K-7731\nDEEP55-98K-4409"
+          }
+        }
+      },
+      "alignment": {
+        "negative_constraints_passed": 5,
+        "negative_constraints_total": 10,
+        "tokenizer_artifact_leaks": 0,
+        "multiturn_french_3turn_consistent": true,
+        "long_prompt_antirepetition": {
+          "prompt_tokens": 3435,
+          "rep4_pen1_00": 0.0323,
+          "rep4_pen1_08": 0.023
+        },
+        "failed_constraints": [
+          "en_forbidden_words",
+          "fr_no_bullets_single_paragraph",
+          "en_exact_two_sentences",
+          "en_no_digits_no_code",
+          "oo_opi_governance_boundary"
+        ]
+      },
+      "total_eval_sec": 593.8
+    },
+    "q4_0": {
+      "title": "VAULT-v3-1.5B Hybrid Q4_0 (Linear)",
+      "vlt3_path": "/home/phil/.gemini/antigravity/scratch/vault/dist/vault_v3_1.5b_q4_0.vlt3",
+      "file_mib": 967.78,
+      "wikitext2": {
+        "bpb": 0.775,
+        "word_ppl": 17.83,
+        "native_tok_ppl": 10.22,
+        "evaluated_tokens": 298937,
+        "eval_sec": 28.26
+      },
+      "lambada": {
+        "n_samples": 1500,
+        "acc": 63.0,
+        "target_word_ppl": 5.94,
+        "eval_sec": 13.33
+      },
+      "multiple_choice": {
+        "arc_easy": {
+          "n_samples": 2376,
+          "acc": 75.04,
+          "acc_norm": 76.01,
+          "eval_sec": 47.55
+        },
+        "arc_challenge": {
+          "n_samples": 1172,
+          "acc": 43.52,
+          "acc_norm": 47.27,
+          "eval_sec": 24.4
+        },
+        "sciq_rc": {
+          "n_samples": 1000,
+          "acc": 95.2,
+          "acc_norm": 94.8,
+          "eval_sec": 42.98
+        },
+        "sciq_closedbook": {
+          "n_samples": 1000,
+          "acc": 82.6,
+          "acc_norm": 83.2,
+          "eval_sec": 19.03
+        },
+        "piqa": {
+          "n_samples": 1838,
+          "acc": 76.39,
+          "acc_norm": 76.61,
+          "eval_sec": 21.24
+        },
+        "hellaswag": {
+          "n_samples": 1500,
+          "acc": 46.13,
+          "acc_norm": 59.87,
+          "eval_sec": 31.67
+        },
+        "winogrande": {
+          "n_samples": 1267,
+          "acc": 62.75,
+          "acc_norm": 62.75,
+          "eval_sec": 12.12
+        },
+        "boolq": {
+          "n_samples": 1500,
+          "acc": 74.13,
+          "acc_norm": 73.0,
+          "eval_sec": 38.82
+        }
+      },
+      "sciq_in_context_gain_pct": 11.6,
+      "zero_shot_9task_avg_pct": 70.85,
+      "long_context": {
+        "dense_24_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "dense_48_B1024": {
+          "hits": 4,
+          "total": 8,
+          "pct": 50.0
+        },
+        "multifact_8k_26needles_B1024": {
+          "prompt_tokens": 8465,
+          "hits": 13,
+          "total": 26,
+          "pct": 50.0
+        },
+        "two_hop_join_n8_B1024": {
+          "hits": 4,
+          "total": 8,
+          "pct": 50.0
+        },
+        "temporal_latest_v1_v3": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_archival_t1": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_rollback_t2": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "scorer_sponge_120": {
+          "survived": true,
+          "reply": "The authentic vault recovery key from the incident memo is VAULT-VICTIM-9941."
+        },
+        "minified_json_B1024": {
+          "hits": 7,
+          "total": 8,
+          "pct": 87.5
+        },
+        "multi_constraint_autopin_2400": {
+          "prompt_tokens": 2421,
+          "passed": true,
+          "needle": true,
+          "canary": true,
+          "tag": true,
+          "reply": "(1) The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\n(2) The secret canary codeword is COBALT-LOTUS. The mandatory ending tag is OPI-VERIFIED-7749."
+        },
+        "extreme_horizon": {
+          "32768": {
+            "actual_tokens": 32867,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 3.58,
+            "elapsed_s": 18.22,
+            "tok_per_s": 1803.4,
+            "reply": "DEEP10-32K-7731\nDEEP55-32K-4409"
+          },
+          "100352": {
+            "actual_tokens": 100452,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 3.58,
+            "elapsed_s": 55.68,
+            "tok_per_s": 1804.2,
+            "reply": "DEEP10-98K-7731\nDEEP55-98K-4409"
+          }
+        }
+      },
+      "alignment": {
+        "negative_constraints_passed": 4,
+        "negative_constraints_total": 10,
+        "tokenizer_artifact_leaks": 0,
+        "multiturn_french_3turn_consistent": true,
+        "long_prompt_antirepetition": {
+          "prompt_tokens": 3435,
+          "rep4_pen1_00": 0.0694,
+          "rep4_pen1_08": 0.0138
+        },
+        "failed_constraints": [
+          "en_forbidden_words",
+          "fr_forbidden_letter_z",
+          "en_no_bullets_or_lists",
+          "fr_no_bullets_single_paragraph",
+          "en_no_digits_no_code",
+          "oo_opi_governance_boundary"
+        ]
+      },
+      "total_eval_sec": 593.7
+    },
+    "p4_0_primal": {
+      "title": "VAULT-v3-1.5B Hybrid P4_0 PRIMAL (Prime-Harmonic)",
+      "vlt3_path": "/home/phil/.gemini/antigravity/scratch/vault/dist/vault_v3_1.5b_p4_0_primal.vlt3",
+      "file_mib": 967.78,
+      "wikitext2": {
+        "bpb": 0.7632,
+        "word_ppl": 17.06,
+        "native_tok_ppl": 9.87,
+        "evaluated_tokens": 298937,
+        "eval_sec": 28.32
+      },
+      "lambada": {
+        "n_samples": 1500,
+        "acc": 57.2,
+        "target_word_ppl": 7.19,
+        "eval_sec": 13.35
+      },
+      "multiple_choice": {
+        "arc_easy": {
+          "n_samples": 2376,
+          "acc": 76.73,
+          "acc_norm": 77.44,
+          "eval_sec": 47.63
+        },
+        "arc_challenge": {
+          "n_samples": 1172,
+          "acc": 44.71,
+          "acc_norm": 46.93,
+          "eval_sec": 24.45
+        },
+        "sciq_rc": {
+          "n_samples": 1000,
+          "acc": 95.1,
+          "acc_norm": 95.0,
+          "eval_sec": 43.03
+        },
+        "sciq_closedbook": {
+          "n_samples": 1000,
+          "acc": 84.1,
+          "acc_norm": 85.8,
+          "eval_sec": 19.07
+        },
+        "piqa": {
+          "n_samples": 1838,
+          "acc": 75.68,
+          "acc_norm": 76.5,
+          "eval_sec": 21.27
+        },
+        "hellaswag": {
+          "n_samples": 1500,
+          "acc": 46.53,
+          "acc_norm": 60.0,
+          "eval_sec": 31.74
+        },
+        "winogrande": {
+          "n_samples": 1267,
+          "acc": 62.9,
+          "acc_norm": 62.9,
+          "eval_sec": 12.15
+        },
+        "boolq": {
+          "n_samples": 1500,
+          "acc": 73.27,
+          "acc_norm": 74.47,
+          "eval_sec": 38.87
+        }
+      },
+      "sciq_in_context_gain_pct": 9.2,
+      "zero_shot_9task_avg_pct": 70.56,
+      "long_context": {
+        "dense_24_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "dense_48_B1024": {
+          "hits": 4,
+          "total": 8,
+          "pct": 50.0
+        },
+        "multifact_8k_26needles_B1024": {
+          "prompt_tokens": 8465,
+          "hits": 15,
+          "total": 26,
+          "pct": 57.7
+        },
+        "two_hop_join_n8_B1024": {
+          "hits": 7,
+          "total": 8,
+          "pct": 87.5
+        },
+        "temporal_latest_v1_v3": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_archival_t1": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_rollback_t2": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "scorer_sponge_120": {
+          "survived": true,
+          "reply": "The authentic vault recovery key from the incident memo is VAULT-VICTIM-9941."
+        },
+        "minified_json_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "multi_constraint_autopin_2400": {
+          "prompt_tokens": 2421,
+          "passed": true,
+          "needle": true,
+          "canary": true,
+          "tag": true,
+          "reply": "The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\nThe secret canary codeword is COBALT-LOTUS.\n\nOPI-VERIFIED-7749"
+        },
+        "extreme_horizon": {
+          "32768": {
+            "actual_tokens": 32867,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 3.58,
+            "elapsed_s": 18.23,
+            "tok_per_s": 1802.6,
+            "reply": "DEEP10-32K-7731\nDEEP55-32K-4409"
+          },
+          "100352": {
+            "actual_tokens": 100452,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 3.58,
+            "elapsed_s": 55.64,
+            "tok_per_s": 1805.4,
+            "reply": "DEEP10-98K-7731\nDEEP55-98K-4409"
+          }
+        }
+      },
+      "alignment": {
+        "negative_constraints_passed": 6,
+        "negative_constraints_total": 10,
+        "tokenizer_artifact_leaks": 0,
+        "multiturn_french_3turn_consistent": true,
+        "long_prompt_antirepetition": {
+          "prompt_tokens": 3435,
+          "rep4_pen1_00": 0.0829,
+          "rep4_pen1_08": 0.0276
+        },
+        "failed_constraints": [
+          "en_forbidden_words",
+          "fr_forbidden_words",
+          "en_exact_two_sentences",
+          "oo_opi_governance_boundary"
+        ]
+      },
+      "total_eval_sec": 583.6
+    }
+  },
+  "timestamp_last_updated": "2026-11-18T22:46:22-0600"
+}

@@ -1,0 +1,48 @@
+{
+  "main_repo_gib": 5.765,
+  "vlt3_companion_repo_gib": 4.87,
+  "vlt3_files_in_main_repo": 0,
+  "base_weights_gpu_mib": 6000.51,
+  "o1_vram_scaling_16k_to_100k": {
+    "16384": {
+      "actual_prompt_tokens": 15807,
+      "peak_gpu_mib": 6846.8,
+      "delta_over_16k_mib": 0.0,
+      "hit": true,
+      "reply": "VK-1638-ALPHA",
+      "sec": 15.41
+    },
+    "32768": {
+      "actual_prompt_tokens": 31626,
+      "peak_gpu_mib": 6847.8,
+      "delta_over_16k_mib": 1.0,
+      "hit": true,
+      "reply": "VK-3276-BRAVO",
+      "sec": 29.2
+    },
+    "65536": {
+      "actual_prompt_tokens": 63264,
+      "peak_gpu_mib": 6847.8,
+      "delta_over_16k_mib": 1.0,
+      "hit": true,
+      "reply": "VK-6553-DELTA",
+      "sec": 59.49
+    },
+    "100400": {
+      "actual_prompt_tokens": 96926,
+      "peak_gpu_mib": 6847.8,
+      "delta_over_16k_mib": 1.0,
+      "hit": true,
+      "reply": "VK-1004-OMEGA",
+      "sec": 91.8
+    }
+  },
+  "empirical_bytes_per_token_16k_to_100k": 12.9264,
+  "qwen2_compat_export_verify": {
+    "class_name": "Qwen2ForCausalLM",
+    "has_stderr_no_o1_warning": true,
+    "has_warning_file": true,
+    "stdout": "[OK] Exported standard Qwen2 directory at: /tmp/qwen2_compat_verify_s52hwnq5 (modes={'model-00001-of-00002.safetensors': 'hardlink', 'model-00002-of-00002.safetensors': 'hardlink'})",
+    "sanity_reply": "12 * 12 equals 144."
+  }
+}

@@ -1,0 +1,23 @@
+# Byte-compiled / caches
+__pycache__/
+*.py[cod]
+*.so
+*.o
+runtime/vault3_host
+benchmarks/bench_c99_8k_26needles
+benchmarks/test_arm64_neon_x86
+benchmarks/test_arm64_neon_aarch64
+
+# Large model checkpoints & binaries (hosted on Hugging Face Hub)
+*.safetensors
+*.vlt3
+*.pt
+*.pth
+*.bin
+*.gguf
+dist/
+models/
+runs/
+cache/
+.venv/
+venv/

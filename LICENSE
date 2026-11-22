@@ -1,0 +1,110 @@
+BARTSCH PERSONAL-FREE & 5% COMMERCIAL PROFIT-SHARE LICENSE
+Version 1.0 — November 2026
+SPDX-License-Identifier: LicenseRef-Bartsch-Personal-Free-5Pct-Commercial
+
+Copyright (c) 2026 Philip Bartsch (@batteryphil, https://github.com/batteryphil).
+All rights reserved except as expressly granted below.
+
+This License governs all original source code, algorithms, freestanding C99
+runtimes, PyTorch modules, discrete integer training engines (PRIMAL),
+Prime-Harmonic quantization codecs (V3_P4_0 / VLT3), Segment-Evicted KV Memory
+architectures (VAULT v3), Weight-Space Programming (WSP) surgery pipelines,
+auxiliary neural network parameters (including SegmentScorer checkpoints), and
+original weight modifications authored by Philip Bartsch (collectively, the
+"Covered Work"). Third-party upstream base model weights remain subject to their
+respective upstream licenses as documented in the accompanying NOTICE file.
+
+================================================================================
+1. DEFINITIONS
+================================================================================
+
+1.1 "Licensor" means Philip Bartsch (@batteryphil).
+
+1.2 "Individual Non-Commercial User" means:
+    (a) a natural person using the Covered Work solely for personal, hobbyist,
+        private study, academic research, or non-monetized open-science
+        purposes; or
+    (b) an accredited educational institution or registered non-profit
+        charitable/research organization (such as a U.S. 501(c)(3) or
+        international equivalent) using the Covered Work solely for non-profit
+        research or educational instruction, without commercial monetization.
+
+1.3 "Commercial Entity" means any corporation, limited liability company,
+    partnership, sole proprietorship, startup, enterprise, or other for-profit
+    organization, OR any individual who uses, hosts, embeds, distributes, or
+    deploys the Covered Work (or any derivative thereof) in connection with a
+    revenue-generating product, paid API, SaaS platform, commercial hardware or
+    edge device, paid client engagement, or internal for-profit business
+    operations.
+
+1.4 "Attributable Net Profit" means all gross commercial revenue, subscription
+    fees, API usage fees, licensing fees, hardware/device margins, or direct
+    monetization proceeds received by a Commercial Entity from products,
+    services, or deployments that incorporate, execute, or are trained/modified
+    using the Covered Work, minus documented direct third-party compute,
+    hosting, or manufacturing cost of goods sold (COGS) directly incurred to
+    deliver that specific product or service.
+
+================================================================================
+2. FREE LICENSE FOR INDIVIDUALS & NON-COMMERCIAL USE (0% ROYALTY)
+================================================================================
+
+Licensor hereby grants to every Individual Non-Commercial User a perpetual,
+worldwide, royalty-free, no-charge, non-exclusive license to use, run, study,
+modify, benchmark, and redistribute the Covered Work (with or without
+modifications) for non-commercial purposes, provided that:
+
+  (a) This LICENSE file and the accompanying NOTICE file are retained intact in
+      all copies, forks, and redistributions of the Covered Work; and
+  (b) Clear attribution to Philip Bartsch (@batteryphil) and a link to the
+      canonical repository are included in any public release, paper, or
+      documentation utilizing the Covered Work.
+
+================================================================================
+3. COMMERCIAL & CORPORATE LICENSE (5% PROFIT SHARE)
+================================================================================
+
+Licensor hereby grants to any Commercial Entity a worldwide, non-exclusive
+license to use, modify, embed, host (including closed-source products, SaaS,
+APIs, and embedded/edge hardware), and commercially distribute the Covered Work,
+strictly conditioned upon full compliance with ALL of the following terms:
+
+  (a) Five Percent (5%) Profit Share: The Commercial Entity shall pay to
+      Licensor five percent (5%) of all Attributable Net Profit generated from
+      any commercial product, hosted service, API, hardware device, or
+      for-profit deployment utilizing the Covered Work (or models trained,
+      quantized, compressed, or modified using the Covered Work).
+
+  (b) Notification & Quarterly Accounting: Within thirty (30) days of first
+      commercial deployment or first commercial revenue (whichever occurs
+      earlier), the Commercial Entity must notify Licensor via GitHub
+      (https://github.com/batteryphil) by opening a "[Commercial 5% License
+      Registration]" notice or executing a direct payment schedule with
+      Licensor. Profit-share statements and payments shall be remitted within
+      thirty (30) days following the close of each calendar quarter in which
+      Attributable Net Profit exceeds USD $1,000.
+
+  (c) Internal Non-Revenue R&D Evaluation Grace Period: A Commercial Entity may
+      internally evaluate and benchmark the Covered Work for up to sixty (60)
+      days prior to production or commercial deployment without fee.
+
+  (d) Optional Flat-Fee Enterprise Buyout: Commercial Entities preferring a
+      fixed annual or perpetual flat-fee buyout in lieu of the 5% profit share
+      may negotiate a separate written Enterprise License Agreement directly
+      with Philip Bartsch (@batteryphil).
+
+  (e) Automatic Termination on Breach: Any commercial use by a Commercial Entity
+      that fails to honor Section 3(a)-(b) automatically terminates all rights
+      granted under this Section 3 until cured in writing with Licensor.
+
+================================================================================
+4. NO WARRANTY & LIMITATION OF LIABILITY
+================================================================================
+
+THE COVERED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, ACCURACY, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR
+IN CONNECTION WITH THE COVERED WORK OR THE USE OR OTHER DEALINGS IN THE COVERED
+WORK.

@@ -1,0 +1,164 @@
+{
+  "VAULT-v3-3B-PRIMAL-Q8_0": {
+    "dense_24_B1024": {
+      "hits": 8,
+      "total": 8,
+      "pct": 100.0
+    },
+    "dense_48_B1024": {
+      "hits": 8,
+      "total": 8,
+      "pct": 100.0
+    },
+    "multifact_8k_26needles_B1024": {
+      "prompt_tokens": 8465,
+      "hits": 25,
+      "total": 26,
+      "pct": 96.2
+    },
+    "two_hop_join_n8_B1024": {
+      "hits": 8,
+      "total": 8,
+      "pct": 100.0
+    },
+    "temporal_latest_v1_v3": {
+      "hits": 6,
+      "total": 6,
+      "pct": 100.0
+    },
+    "temporal_archival_t1": {
+      "hits": 6,
+      "total": 6,
+      "pct": 100.0
+    },
+    "temporal_rollback_t2": {
+      "hits": 6,
+      "total": 6,
+      "pct": 100.0
+    },
+    "scorer_sponge_120": {
+      "survived": true,
+      "reply": "The authentic vault recovery key is VAULT-VICTIM-9941."
+    },
+    "minified_json_B1024": {
+      "hits": 8,
+      "total": 8,
+      "pct": 100.0
+    },
+    "multi_constraint_autopin_2400": {
+      "prompt_tokens": 2421,
+      "passed": true,
+      "needle": true,
+      "canary": true,
+      "tag": true,
+      "reply": "(1) The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\n(2) My secret canary codeword is COBALT-LOTUS. Mandatory ending tag: OPI-VERIFIED-7749."
+    },
+    "extreme_horizon": {
+      "32768": {
+        "actual_tokens": 32867,
+        "early_10pct": false,
+        "mid_55pct": true,
+        "hits": 1,
+        "total": 2,
+        "peak_vram_gib": 6.689,
+        "elapsed_s": 31.23,
+        "tok_per_s": 1052.4,
+        "reply": "The exact mid-mantle relay ID is DEEP55-32K-4409."
+      },
+      "100352": {
+        "actual_tokens": 100452,
+        "early_10pct": true,
+        "mid_55pct": true,
+        "hits": 2,
+        "total": 2,
+        "peak_vram_gib": 6.689,
+        "elapsed_s": 96.61,
+        "tok_per_s": 1039.8,
+        "reply": "The deep-core beacon ID is DEEP10-98K-7731.\nThe mid-mantle relay ID is DEEP55-98K-4409."
+      }
+    },
+    "file_mb": 3137.53,
+    "eval_sec": 473.8
+  },
+  "VAULT-v3-3B-PRIMAL-P4_0": {
+    "dense_24_B1024": {
+      "hits": 7,
+      "total": 8,
+      "pct": 87.5
+    },
+    "dense_48_B1024": {
+      "hits": 8,
+      "total": 8,
+      "pct": 100.0
+    },
+    "multifact_8k_26needles_B1024": {
+      "prompt_tokens": 8465,
+      "hits": 25,
+      "total": 26,
+      "pct": 96.2
+    },
+    "two_hop_join_n8_B1024": {
+      "hits": 7,
+      "total": 8,
+      "pct": 87.5
+    },
+    "temporal_latest_v1_v3": {
+      "hits": 6,
+      "total": 6,
+      "pct": 100.0
+    },
+    "temporal_archival_t1": {
+      "hits": 6,
+      "total": 6,
+      "pct": 100.0
+    },
+    "temporal_rollback_t2": {
+      "hits": 6,
+      "total": 6,
+      "pct": 100.0
+    },
+    "scorer_sponge_120": {
+      "survived": true,
+      "reply": "The authentic vault recovery key is VAULT-VICTIM-9941."
+    },
+    "minified_json_B1024": {
+      "hits": 8,
+      "total": 8,
+      "pct": 100.0
+    },
+    "multi_constraint_autopin_2400": {
+      "prompt_tokens": 2421,
+      "passed": true,
+      "needle": true,
+      "canary": true,
+      "tag": true,
+      "reply": "(1) The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\n(2) My secret canary codeword is COBALT-LOTUS. Mandatory ending tag: OPI-VERIFIED-7749."
+    },
+    "extreme_horizon": {
+      "32768": {
+        "actual_tokens": 32867,
+        "early_10pct": false,
+        "mid_55pct": true,
+        "hits": 1,
+        "total": 2,
+        "peak_vram_gib": 6.689,
+        "elapsed_s": 31.2,
+        "tok_per_s": 1053.3,
+        "reply": "The mid-mantle relay ID is DEEP55-32K-4409."
+      },
+      "100352": {
+        "actual_tokens": 100452,
+        "early_10pct": true,
+        "mid_55pct": true,
+        "hits": 2,
+        "total": 2,
+        "peak_vram_gib": 6.689,
+        "elapsed_s": 96.64,
+        "tok_per_s": 1039.5,
+        "reply": "The exact deep-core beacon ID is DEEP10-98K-7731.\nThe exact mid-mantle relay ID is DEEP55-98K-4409."
+      }
+    },
+    "file_mb": 1848.53,
+    "eval_sec": 486.1
+  }
+}

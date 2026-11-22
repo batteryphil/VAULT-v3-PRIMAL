@@ -1,0 +1,43 @@
+{
+  "vlt3": "vault_v3_3b_p4_0_primal.vlt3",
+  "seg_on": {
+    "noseg": 0,
+    "prompt_tokens": 8457,
+    "window": 1024,
+    "n_pin": 11,
+    "seg_budget": 1024,
+    "mem_cnt": 1024,
+    "uniq_segs": 39,
+    "candidate_evicted_region_tokens": 7422,
+    "survival_rate_pct": 13.8,
+    "eviction_pressure_pct": 86.2,
+    "hits": 26,
+    "total": 26,
+    "acc_pct": 100.0,
+    "prefill_s": 452.89,
+    "prefill_tok_s": 18.63,
+    "queries_26_s": 57.32,
+    "state_arena_mb": 398.55,
+    "peak_rss_mb": 2617.45
+  },
+  "noseg_control": {
+    "noseg": 1,
+    "prompt_tokens": 8457,
+    "window": 1024,
+    "n_pin": 11,
+    "seg_budget": 0,
+    "mem_cnt": 0,
+    "uniq_segs": 0,
+    "candidate_evicted_region_tokens": 7422,
+    "survival_rate_pct": 0.0,
+    "eviction_pressure_pct": 100.0,
+    "hits": 0,
+    "total": 26,
+    "acc_pct": 0.0,
+    "prefill_s": 407.29,
+    "prefill_tok_s": 20.72,
+    "queries_26_s": 62.94,
+    "state_arena_mb": 398.55,
+    "peak_rss_mb": 2617.07
+  }
+}

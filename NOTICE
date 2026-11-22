@@ -1,0 +1,37 @@
+# Third-Party Upstream Model & Attribution Notices
+
+This repository contains **original software, runtimes, discrete integer training engines (`PRIMAL`), quantization codecs (`V3_P4_0` / `VLT3`), `O(1)` memory architectures (`VAULT v3`), and Weight-Space Programming (`WSP`) surgery pipelines** Copyright (c) 2026 Philip Bartsch (`@batteryphil`), licensed under the **[Bartsch Personal-Free & 5% Commercial Profit-Share License](LICENSE)**.
+
+When used with third-party pre-trained neural network base weights, the following upstream notices and license scopes apply independently to those upstream base weights:
+
+---
+
+## 1. `DeepSeek-R1-Distill-Qwen-1.5B` (Upstream Base for `DeepSeek-R1-1.5B-WSP`)
+- **Upstream Source:** [`deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B`](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B) (distilled from [`Qwen/Qwen2.5-Math-1.5B`](https://huggingface.co/Qwen/Qwen2.5-Math-1.5B))
+- **Upstream Licenses:** **MIT License** (DeepSeek) atop **Apache License 2.0** (Qwen2.5-Math-1.5B).
+- **Commercial Compatibility:** Both MIT and Apache-2.0 explicitly permit modification, commercial distribution, and sublicensing of derivative works. When `DeepSeek-R1-1.5B-WSP` is combined with VAULT/PRIMAL/WSP software or `.vlt3` runtimes from this repository, the resulting original software and WSP modifications are governed by [`LICENSE`](LICENSE), while retaining DeepSeek's original MIT copyright notice below:
+
+```text
+MIT License
+Copyright (c) 2023 DeepSeek
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+```
+
+---
+
+## 2. `Qwen/Qwen2.5-3B` & `Qwen/Qwen2.5-3B-Instruct` (Upstream Base for `VAULT-v3-3B-PRIMAL`)
+- **Upstream Source:** [`Qwen/Qwen2.5-3B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct)
+- **Published Derivatives:**
+  - [`batteryphil/VAULT-v3-3B-PRIMAL`](https://huggingface.co/batteryphil/VAULT-v3-3B-PRIMAL)
+  - [`batteryphil/VAULT-v3-3B-PRIMAL-VLT3`](https://huggingface.co/batteryphil/VAULT-v3-3B-PRIMAL-VLT3)
+- **Upstream Base Weight Notice (*Built with Qwen*):** Unlike the `0.5B`, `1.5B`, `7B`, `14B`, and `32B` Qwen2.5 models (which are `Apache-2.0`), Alibaba Cloud released the `3B` base checkpoint under the non-commercial **[Qwen Research License Agreement](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE)**.
+  - Accordingly, while all **VAULT v3**, **PRIMAL v3.1**, **V3_P4_0**, **C99 runtime**, **`SegmentScorer`**, and **WSP** code/parameters in this repository are commercially licensed under [`LICENSE`](LICENSE) (5% profit share), commercial entities deploying `Qwen2.5-3B`-derived neural network weights must either obtain a commercial base-weight license from Alibaba Cloud **or** run the VAULT/PRIMAL/WSP stack on an unrestricted `MIT`/`Apache-2.0` base model such as `DeepSeek-R1-Distill-Qwen-1.5B` (`MIT`) or `Qwen/Qwen2.5-1.5B-Instruct` / `Qwen/Qwen2.5-7B-Instruct` (`Apache-2.0`).

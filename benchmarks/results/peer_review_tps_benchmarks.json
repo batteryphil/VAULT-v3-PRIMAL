@@ -1,0 +1,42 @@
+{
+  "hardware": {
+    "gpu": "AMD Radeon RX 9060 XT 16 GB (15.92 GiB usable, 128-bit GDDR6 ~320 GB/s, ROCm eager PyTorch BF16)",
+    "cpu": "Intel Xeon Gold 6136 @ 3.00 GHz (12C/24T Skylake-SP, portable AVX2+FMA C99)"
+  },
+  "gpu_training_tok_s": {
+    "primal_v3_1_q8_0_B2_L2048_ga4": {
+      "tok_s": 777.0,
+      "peak_vram_gib": 9.283
+    },
+    "control_hooked_bf16_adamw8bit_b1_L2048_ga1": {
+      "tok_s": 504.5,
+      "peak_vram_gib": 13.263
+    }
+  },
+  "gpu_apples_to_apples_hf_model_generate": {
+    "vault_o1": {
+      "64": {"prefill_tok_s": 745.7, "decode_tok_s": 31.85, "peak_vram_mib": 6287.1},
+      "16384": {"prefill_tok_s": 1074.1, "decode_tok_s": 36.97, "peak_vram_mib": 6843.8},
+      "65536": {"prefill_tok_s": 1072.9, "decode_tok_s": 29.25, "peak_vram_mib": 6843.8},
+      "100352": {"prefill_tok_s": 1062.9, "decode_tok_s": 29.18, "peak_vram_mib": 6843.8, "dual_needle_acc": "2/2 (100%)"}
+    },
+    "stock_qwen2_o_L": {
+      "64": {"prefill_tok_s": 1281.9, "decode_tok_s": 27.57, "peak_vram_mib": 6081.7},
+      "16384": {"prefill_tok_s": 4138.5, "decode_tok_s": 17.59, "peak_vram_mib": 7943.1},
+      "32768": {"prefill_tok_s": 2932.2, "decode_tok_s": 11.87, "peak_vram_mib": 9815.7},
+      "65536": {"prefill_tok_s": 1873.4, "decode_tok_s": 7.49, "peak_vram_mib": 13561.0},
+      "100352": {"status": "CUDA OOM (tried to allocate 2.06 GiB with 1.45 GiB free on 15.92 GiB GPU)"}
+    }
+  },
+  "cpu_c99_freestanding_avx2_thread_scaling": {
+    "v3_p4_0_1_805_gib": {
+      "threads_12_physical_cores_0_11": {"decode_tok_s": 23.06, "post_evict_decode_tok_s": 16.64, "prefill_seq_tok_s": 17.44, "peak_rss_mib": 2236.63},
+      "threads_16": {"decode_tok_s": 25.47, "post_evict_decode_tok_s": 18.68, "prefill_seq_tok_s": 19.68, "peak_rss_mib": 2236.63},
+      "threads_24_full_smt": {"decode_tok_s": 27.19, "ms_per_tok": 36.78, "peak_rss_mib": 2235.88}
+    },
+    "v3_q8_0_3_064_gib": {
+      "threads_12_physical_cores_0_11": {"decode_tok_s": 20.16, "post_evict_decode_tok_s": 15.11, "prefill_seq_tok_s": 15.63, "peak_rss_mib": 3526.51},
+      "threads_16": {"decode_tok_s": 21.70, "post_evict_decode_tok_s": 16.47, "prefill_seq_tok_s": 17.18, "peak_rss_mib": 3526.32}
+    }
+  }
+}

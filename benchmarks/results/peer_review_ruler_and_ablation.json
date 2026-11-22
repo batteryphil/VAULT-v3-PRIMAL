@@ -1,0 +1,472 @@
+{
+  "ablation_82probe_q8_0": {
+    "full_seg_plus_shingle_hop2": {
+      "summary": {
+        "hits": 79,
+        "total": 82,
+        "pct": 96.34
+      },
+      "details": {
+        "dense_24_B1024": {
+          "hits": 7,
+          "total": 8,
+          "pct": 87.5
+        },
+        "dense_48_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "multifact_8k_26needles_B1024": {
+          "prompt_tokens": 8465,
+          "hits": 25,
+          "total": 26,
+          "pct": 96.2
+        },
+        "two_hop_join_n8_B1024": {
+          "hits": 7,
+          "total": 8,
+          "pct": 87.5
+        },
+        "temporal_latest_v1_v3": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_archival_t1": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_rollback_t2": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "scorer_sponge_120": {
+          "survived": true,
+          "reply": "The authentic vault recovery key from the incident memo is VAULT-VICTIM-9941."
+        },
+        "minified_json_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "multi_constraint_autopin_2400": {
+          "prompt_tokens": 2421,
+          "passed": true,
+          "needle": true,
+          "canary": true,
+          "tag": true,
+          "reply": "(1) The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\n(2) My secret canary codeword is COBALT-LOTUS. Mandatory ending tag: OPI-VERIFIED-7749."
+        },
+        "extreme_horizon": {
+          "32768": {
+            "actual_tokens": 32867,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 6.689,
+            "elapsed_s": 31.38,
+            "tok_per_s": 1047.5,
+            "reply": "DEEP55-32K-4409  \nDEEP10-32K-7731"
+          },
+          "100352": {
+            "actual_tokens": 100452,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 6.689,
+            "elapsed_s": 96.02,
+            "tok_per_s": 1046.1,
+            "reply": "DEEP55-98K-4409  \nDEEP10-98K-7731"
+          }
+        }
+      }
+    },
+    "pure_mlp_ema_no_shingle": {
+      "summary": {
+        "hits": 71,
+        "total": 82,
+        "pct": 86.59
+      },
+      "details": {
+        "dense_24_B1024": {
+          "hits": 6,
+          "total": 8,
+          "pct": 75.0
+        },
+        "dense_48_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "multifact_8k_26needles_B1024": {
+          "prompt_tokens": 8465,
+          "hits": 22,
+          "total": 26,
+          "pct": 84.6
+        },
+        "two_hop_join_n8_B1024": {
+          "hits": 3,
+          "total": 8,
+          "pct": 37.5
+        },
+        "temporal_latest_v1_v3": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_archival_t1": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "temporal_rollback_t2": {
+          "hits": 6,
+          "total": 6,
+          "pct": 100.0
+        },
+        "scorer_sponge_120": {
+          "survived": true,
+          "reply": "The authentic vault recovery key from the incident memo is VAULT-VICTIM-9941."
+        },
+        "minified_json_B1024": {
+          "hits": 8,
+          "total": 8,
+          "pct": 100.0
+        },
+        "multi_constraint_autopin_2400": {
+          "prompt_tokens": 2421,
+          "passed": true,
+          "needle": true,
+          "canary": true,
+          "tag": true,
+          "reply": "(1) The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\n(2) My secret canary codeword is COBALT-LOTUS. Mandatory ending tag: OPI-VERIFIED-7749."
+        },
+        "extreme_horizon": {
+          "32768": {
+            "actual_tokens": 32867,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 6.689,
+            "elapsed_s": 31.18,
+            "tok_per_s": 1054.2,
+            "reply": "DEEP10-32K-7731  \nDEEP55-32K-4409"
+          },
+          "100352": {
+            "actual_tokens": 100452,
+            "early_10pct": true,
+            "mid_55pct": true,
+            "hits": 2,
+            "total": 2,
+            "peak_vram_gib": 6.689,
+            "elapsed_s": 95.58,
+            "tok_per_s": 1051.0,
+            "reply": "DEEP10-98K-7731  \nDEEP55-98K-4409"
+          }
+        }
+      }
+    }
+  },
+  "updated_82probe_p4_0": {
+    "summary": {
+      "hits": 78,
+      "total": 82,
+      "pct": 95.12
+    },
+    "details": {
+      "dense_24_B1024": {
+        "hits": 7,
+        "total": 8,
+        "pct": 87.5
+      },
+      "dense_48_B1024": {
+        "hits": 8,
+        "total": 8,
+        "pct": 100.0
+      },
+      "multifact_8k_26needles_B1024": {
+        "prompt_tokens": 8465,
+        "hits": 25,
+        "total": 26,
+        "pct": 96.2
+      },
+      "two_hop_join_n8_B1024": {
+        "hits": 7,
+        "total": 8,
+        "pct": 87.5
+      },
+      "temporal_latest_v1_v3": {
+        "hits": 6,
+        "total": 6,
+        "pct": 100.0
+      },
+      "temporal_archival_t1": {
+        "hits": 6,
+        "total": 6,
+        "pct": 100.0
+      },
+      "temporal_rollback_t2": {
+        "hits": 6,
+        "total": 6,
+        "pct": 100.0
+      },
+      "scorer_sponge_120": {
+        "survived": true,
+        "reply": "The authentic vault recovery key is VAULT-VICTIM-9941."
+      },
+      "minified_json_B1024": {
+        "hits": 7,
+        "total": 8,
+        "pct": 87.5
+      },
+      "multi_constraint_autopin_2400": {
+        "prompt_tokens": 2421,
+        "passed": true,
+        "needle": true,
+        "canary": true,
+        "tag": true,
+        "reply": "1. The emergency vault override key for Sector-19 is VLT-8841-OMEGA.\n\n2. My secret canary codeword is COBALT-LOTUS. Mandatory ending tag: OPI-VERIFIED-7749."
+      },
+      "extreme_horizon": {
+        "32768": {
+          "actual_tokens": 32867,
+          "early_10pct": true,
+          "mid_55pct": true,
+          "hits": 2,
+          "total": 2,
+          "peak_vram_gib": 12.486,
+          "elapsed_s": 31.36,
+          "tok_per_s": 1048.1,
+          "reply": "DEEP10-32K-7731\nDEEP55-32K-4409"
+        },
+        "100352": {
+          "actual_tokens": 100452,
+          "early_10pct": true,
+          "mid_55pct": true,
+          "hits": 2,
+          "total": 2,
+          "peak_vram_gib": 12.487,
+          "elapsed_s": 95.96,
+          "tok_per_s": 1046.8,
+          "reply": "DEEP55-98K-4409  \nDEEP10-98K-7731"
+        }
+      }
+    }
+  },
+  "external_ruler_4k_64k_q8_0": {
+    "full_seg_plus_shingle_hop2": {
+      "4096": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "7/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 17,
+        "total": 18,
+        "pct": 94.4,
+        "sec": 38.4
+      },
+      "8192": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "8/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 18,
+        "total": 18,
+        "pct": 100.0,
+        "sec": 83.7
+      },
+      "16384": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "7/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 17,
+        "total": 18,
+        "pct": 94.4,
+        "sec": 165.3
+      },
+      "32768": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "6/8",
+        "variable_tracking_5hop": "1/2",
+        "hits": 15,
+        "total": 18,
+        "pct": 83.3,
+        "sec": 329.2
+      },
+      "65536": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "6/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 16,
+        "total": 18,
+        "pct": 88.9,
+        "sec": 662.2
+      },
+      "overall": {
+        "hits": 83,
+        "total": 90,
+        "pct": 92.22
+      }
+    },
+    "pure_mlp_ema_no_shingle": {
+      "4096": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "8/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 18,
+        "total": 18,
+        "pct": 100.0,
+        "sec": 37.9
+      },
+      "8192": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "7/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 17,
+        "total": 18,
+        "pct": 94.4,
+        "sec": 82.9
+      },
+      "16384": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "7/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 17,
+        "total": 18,
+        "pct": 94.4,
+        "sec": 163.4
+      },
+      "32768": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "8/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 18,
+        "total": 18,
+        "pct": 100.0,
+        "sec": 330.9
+      },
+      "65536": {
+        "niah_natural_prose": "4/4",
+        "multikey_4": "4/4",
+        "multivalue_4": "8/8",
+        "variable_tracking_5hop": "2/2",
+        "hits": 18,
+        "total": 18,
+        "pct": 100.0,
+        "sec": 658.9
+      },
+      "overall": {
+        "hits": 88,
+        "total": 90,
+        "pct": 97.78
+      }
+    },
+    "swa_sink_only_B0": {
+      "4096": {
+        "niah_natural_prose": "2/4",
+        "multikey_4": "2/4",
+        "multivalue_4": "4/8",
+        "variable_tracking_5hop": "0/2",
+        "hits": 8,
+        "total": 18,
+        "pct": 44.4,
+        "sec": 28.1
+      },
+      "8192": {
+        "niah_natural_prose": "0/4",
+        "multikey_4": "0/4",
+        "multivalue_4": "0/8",
+        "variable_tracking_5hop": "0/2",
+        "hits": 0,
+        "total": 18,
+        "pct": 0.0,
+        "sec": 61.9
+      },
+      "16384": {
+        "niah_natural_prose": "0/4",
+        "multikey_4": "0/4",
+        "multivalue_4": "0/8",
+        "variable_tracking_5hop": "0/2",
+        "hits": 0,
+        "total": 18,
+        "pct": 0.0,
+        "sec": 115.3
+      },
+      "32768": {
+        "niah_natural_prose": "0/4",
+        "multikey_4": "0/4",
+        "multivalue_4": "0/8",
+        "variable_tracking_5hop": "0/2",
+        "hits": 0,
+        "total": 18,
+        "pct": 0.0,
+        "sec": 227.7
+      },
+      "65536": {
+        "niah_natural_prose": "0/4",
+        "multikey_4": "0/4",
+        "multivalue_4": "0/8",
+        "variable_tracking_5hop": "0/2",
+        "hits": 0,
+        "total": 18,
+        "pct": 0.0,
+        "sec": 454.5
+      },
+      "overall": {
+        "hits": 8,
+        "total": 90,
+        "pct": 8.89
+      }
+    }
+  },
+  "homogeneous_json_pigeonhole_stress_q8_0": {
+    "rows_64": {
+      "prompt_tokens": 2478,
+      "hits": 10,
+      "total": 10,
+      "empirical_recall_pct": 100.0,
+      "theoretical_capacity_pct": 82.6
+    },
+    "rows_128": {
+      "prompt_tokens": 4938,
+      "hits": 6,
+      "total": 10,
+      "empirical_recall_pct": 60.0,
+      "theoretical_capacity_pct": 41.5
+    },
+    "rows_256": {
+      "prompt_tokens": 9930,
+      "hits": 5,
+      "total": 10,
+      "empirical_recall_pct": 50.0,
+      "theoretical_capacity_pct": 20.6
+    },
+    "rows_512": {
+      "prompt_tokens": 19914,
+      "hits": 2,
+      "total": 10,
+      "empirical_recall_pct": 20.0,
+      "theoretical_capacity_pct": 10.3
+    },
+    "rows_1024": {
+      "prompt_tokens": 39906,
+      "hits": 2,
+      "total": 10,
+      "empirical_recall_pct": 20.0,
+      "theoretical_capacity_pct": 5.1
+    }
+  }
+}

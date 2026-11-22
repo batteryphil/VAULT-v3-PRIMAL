@@ -1,0 +1,416 @@
+================================================================================
+AI PEER REVIEW TECHNICAL DOSSIER v3 (ROUND-2 REMEDIATION & PRE-RELEASE VERIFICATION)
+System: VAULT-v3-3B-PRIMAL v3.1 (Lossless Error-Feedback Discrete Q8_0 / P4_0 + O(1) Segment KV Memory)
+Base Model: Qwen/Qwen2.5-3B-Instruct (+ Untouched Qwen/Qwen2.5-3B Base Control)
+Hardware: Single Consumer 16 GB GPU (AMD Radeon RX 9060 XT, 15.92 GiB / 17,095,983,104 B usable)
+          + 24-Thread x86_64 Linux Host (124 GiB RAM) + Freestanding ARM64 NEON Execution (qemu-aarch64)
+Audit Standard: ZERO claims not 100% backed by executed code, saved JSON logs, and controls.
+================================================================================
+
+0. EXECUTIVE SUMMARY OF ROUND-2 REMEDIATION & COMPLETE EMPIRICAL RESULTS
+--------------------------------------------------------------------------------
+Every defect, causal confound, unit discrepancy, and legal guardrail identified in
+the Round-2 Adversarial Peer Review (plus a Stage-1 source-code audit) was patched
+in code, re-compiled, and verified end-to-end across all full evaluation splits:
+
+1. Default Shingle/Hop-2 Sabotage Fixed via Sparse 1-Head/GQA-Group Gating (Section 3):
+   - Root Cause Confirmed: Applying FNV-1a shingle / Hop-2 pre-softmax logit bias
+     across all 16 query heads hijacked multi-value / dual-needle softmax aggregation
+     (collapsing External RULER from 95.56% to 70.00% and 32.9K/100.5K Dual-Needle
+     from 4/4 to 2/4 in v3.0).
+   - Architectural Fix (1:1 in src/vault_v3_model.py and runtime/vault3.c): Gated
+     shingle/Hop-2 resonance onto ONLY 1 query head per 8-head GQA group (h in {7, 15},
+     2/16 query heads = 12.5% across layers 9..33), leaving 14/16 (87.5%) of heads
+     completely undistorted for multi-value aggregation, and exposed
+     enable_shingle_bias (Python config/forward/generate/CLI + C99 --no-shingle).
+   - Verified 172-Probe Long-Context Results (82 VAULT + 90 External RULER):
+       * New Shipped Default (Sparse 2/16 Shingle = ON): 162 / 172 (94.19%) —
+         simultaneously achieving 79 / 82 (96.34% Q8_0) & 78 / 82 (95.12% P4_0) on
+         VAULT (4 / 4 = 100% on 32.9K & 100.5K Dual-Needle, 8 / 8 = 100% Minified
+         JSON, 7 / 8 = 87.5% 2-Hop Join, 25 / 26 = 96.2% 8.5K Multi-Fact) AND
+         83 / 90 (92.22%) on External RULER 4K-64K (+22.22% over 16/16 Shingle!).
+       * Pure SegmentScorer MLP+EMA (enable_shingle_bias = False): 159 / 172 (92.44%)
+         — 71 / 82 (86.59%) on VAULT + 88 / 90 (97.78%) on External RULER 4K-64K
+         (100.0% at 32K and 64K — 2x beyond Qwen2.5-3B's 32K RoPE horizon!).
+       * Sliding-Window + Sinks Baseline (seg_budget = 0): 8 / 90 (8.89% overall,
+         0.0% across 8K-64K) on RULER and 0 / 26 (0.0%) vs. 26 / 26 (100.0%) in C99.
+
+2. Off-Policy GSM8K Root-Cause Proof + On-Policy PRIMAL v3.1 + Zero Rebalance Spike (Sections 1-2):
+   - Causal Isolation (EXP-A — Layer-Hooked BF16 + 8-Bit AdamW at lr_peak = 2e-4):
+     In Round 1, continuous BF16 + 8-bit AdamW at lr_peak = 1e-5 (sub_lr = 1.25e-6
+     without FP32 master weights) fell inside the BF16 mantissa dead zone (0.5 ULP ~
+     1.22e-4 at |w| ~ 0.03125), moving WT2 PPL by only -0.06. Raising 8-bit AdamW to
+     lr_peak = 2e-4 (sub_lr = 2.5e-5, 120 b=1 micro-steps = 245,760 tokens) on the
+     SAME Round-1/2 off-policy ~110-token math stream matched PRIMAL v3's WT2 Word PPL
+     (13.63 vs. 13.71) AND reproduced the exact GSM8K collapse: mean_gen_tokens
+     dropped from 331.0 -> 113.7 and full GSM8K-1319 dropped from 85.52% -> 72.63%
+     (958 / 1,319). This proves off-policy terse target supervision — not missing
+     second-moment sqrt(v_t) normalization — caused the GSM8K regression.
+   - On-Policy PRIMAL v3.1 Solution (25 steps = 409,600 tokens): Replaced terse math
+     targets with 645 / 700 (92.14%) verified-correct on-policy Qwen2.5-3B-Instruct
+     CoT traces (mean 330.7 tokens, strictly deduplicated against GSM8K test and
+     GSM8K-TrainVal200) mixed with 20% coding and 30% textbook replay:
+       * Full GSM8K-1319 (1,024 tok): 85.60% [83.70, 87.41] (1,129 / 1,319, mean
+         323.2 tok) on Q8_0 -> BF16 (+0.08% above untouched Instruct's 85.52%,
+         continuity-corrected McNemar p = 1.0) and 84.69% [82.71, 86.58] (1,117 /
+         1,319) on 1.805 GiB V3_P4_0 (-0.83%, p = 0.433).
+       * Full-Split Zero-Shot & PPL Gains Expanded Simultaneously: 77.20% 8-Task MC
+         (+2.20% over Instruct 75.00%, +3.12% over Base 74.08%), 76.06% 9-Task avg
+         (+2.07% over Instruct), and 13.58 WikiText-2 Word PPL (-0.63 vs. Instruct).
+   - Sparse O(n_crowded) rebalance_scales (vault_primal.py): Eliminated the +3.11 GiB
+     rebalance VRAM spike completely — steady_peak_train_gib = 9.283 GiB and
+     rebalance_step_peak_train_gib = 9.283 GiB (+0.000 GiB delta) while dynamically
+     rebalancing 5,523 / 96,428,032 blocks (max |q| = 123 < 127).
+
+3. Exact V3_Q8_0 (FP32) vs. Exported BF16 Safetensors Audit (Section 2.3):
+   - Evaluated exact V3_Q8_0 (int8 * fp16 -> exact IEEE-754 float32, 0 ULP weight
+     rounding) against exported BF16 safetensors across 6 deterministic benchmarks:
+     WT2 Word PPL is 13.60 (FP32) vs. 13.58 (BF16), and mean absolute accuracy delta
+     across LAMBADA-1K, ARC-Easy, ARC-Challenge, SciQ-RC, and SciQ-CB is 0.16%.
+
+4. Real ARM64 NEON Execution, External Clean-Room HF Fixes & Legal Guardrails (Section 4):
+   - Executed freestanding zero-libc AArch64 NEON binary (clang --target=aarch64-linux-gnu
+     -static -ffreestanding -nostdlib) under qemu-aarch64-static v8.2.2 against all
+     36 layers of vault_v3_3b_p4_0_primal.vlt3 (V3_P4_0 vqtbl1q_s8 + V3_Q8_0 + V3_F32):
+     max_abs_logit_diff = 0.000016 (1.6e-5) vs. x86_64 AVX2 and 10 / 10 (100%) exact
+     greedy token ID match.
+   - Fixed external-machine Hub tokenizer.json resolution in modeling_vault_v3.py /
+     vault_v3_core.py (zero local cache path assumptions), preserved SegmentScorer in
+     exact FP32 (_keep_in_fp32_modules), patched macOS __APPLE__ ru_maxrss byte
+     scaling, verified 0.00 MiB GPU VRAM growth from 31,626 -> 96,926 tokens
+     (6,847.80 MiB flat) in clean-room /tmp, and added prominent AGPLv3 Section 13
+     network-copyleft + Qwen Research non-commercial weight disclaimers.
+
+================================================================================
+1. SHADOWLESS DISCRETE PRIMAL v3.1 & CONTINUOUS 8-BIT CONTROLS
+================================================================================
+
+1.1 Exact Persistent-State & Peak-VRAM Accounting on 15.92 GiB RX 9060 XT
+--------------------------------------------------------------------------------
+Total backbone parameters: 3,085,938,688
+  - Discrete 2D parameters (QK = 32 blocks): 3,085,697,024 (99.992169%, 96,428,032 blocks)
+  - Continuous FP32 1D norms & QKV biases:         241,664 (0.007831%)
+  - Auxiliary O(1) SegmentScorer MLP (inference): 1,585,665 FP32 params (6.049 MiB)
+
+Exact training state bytes from first principles:
+  - PRIMAL v3.1: 3,085,697,024 * (1 B q + 2/32 B fp16 d + 1 B vote) + 241,664 * 16 B
+    = 6,368,116,736 B = 6,073.11 MiB = 5.931 GiB (2.0636 B/param).
+  - Layer-Hooked BF16 + Blockwise 8-Bit AdamW (int8 m_q, uint8 v_q + two fp16 scales
+    m_d, v_d per 32-weight block = 4.125 B/param on 2D; BF16 w + FP32 m, v = 10 B on 1D):
+    3,085,697,024 * 4.125 + 241,664 * 10 = 12,730,916,864 B = 12,141.15 MiB = 11.857 GiB
+    (4.1255 B/param; 1.999x larger persistent state than PRIMAL).
+
+| Optimizer / Configuration (3.086B Full-Param) | Persistent State | B/param | Micro-Batch | Peak Train VRAM | Throughput |
+|---|---:|---:|---|---:|---:|
+| Standard Mixed-Precision AdamW (FP32 master + m,v + BF16 grad) | 45.984 GiB | 16.000 | OOM on 16 GB | >46 GiB (OOM) | — |
+| Layer-Hooked BF16 + 8-Bit AdamW (grad_accum=4 persistent .grad) | 17.607 GiB |  6.125 | B=2, L=2048, ga=4 | OOM before fwd | — |
+| Layer-Hooked BF16 + 8-Bit AdamW (grad_accum=1, B=2) | 11.857 GiB |  4.125 | B=2, L=2048, ga=1 | >15.92 GiB (OOM*) | — |
+| Layer-Hooked BF16 + 8-Bit AdamW (grad_accum=1, b=1 + CPU lm_head) | 11.857 GiB |  4.125 | b=1, L=2048, ga=1 | 13.263 GiB | 504.5 tok/s |
+| Shadowless Discrete PRIMAL v3.0 (Dense Tensor Rebalance) |  5.931 GiB |  2.064 | B=2, L=2048, ga=4 | 9.280 GiB (12.39 rebal) | 777.0 tok/s |
+| Shadowless Discrete PRIMAL v3.1 (Sparse O(n_crowded) Rebalance) |  5.931 GiB |  2.064 | B=2, L=2048, ga=4 | 9.283 GiB (9.283 rebal) | 777.0 tok/s |
+
+*Exact OOM logged on RX 9060 XT (15.92 GiB): 14.98 GiB allocated + 298.00 MiB
+log_softmax failed inside 512-token chunked lm_head at B=2, ga=1. Because continuous
+register_post_accumulate_grad_hook fires on every .backward(), it cannot accumulate
+grad_accum > 1 without +5.75 GiB persistent .grad buffers, whereas PRIMAL folds
+arbitrary micro-batches into the same 1-byte int8 vote_buffer at 0 extra bytes.
+
+1.2 Sparse O(n_crowded) Virtual-Weight-Invariant Block Rebalancing
+--------------------------------------------------------------------------------
+In primal_v7/vault_primal.py:rebalance_scales (lines 316-353):
+  - Scans q in 262,144-block int8 slices (8 MiB view) to identify blocks with
+    max_i |q_{b,i}| >= rail_trigger (122), then allocates FP32 rescaling temporaries
+    STRICTLY for the n_crowded triggered blocks rather than whole weight matrices.
+  - Preserves virtual weight w_virt = (q + v/T) * d_b across scale growth (ratio =
+    d_old / d_new = 1/1.12 in v3.1) by folding sibling re-quantization residuals
+    back into vote_buffer:
+      q_round = round(q * ratio),  v_comp = round((q * ratio - q_round) * T + v * ratio),
+    strictly bounded inside |v_comp| <= 0.5*T + (T-1)/1.12 < 42 << 127 (never
+    overflowing int8) with <= 0.000160 max relative error.
+  - Empirical Verification in PRIMAL v3.1 (25 steps, rebalance_every=10):
+    5,523 / 96,428,032 unique blocks (0.00573%) dynamically rebalanced, holding
+    max |q| = 123 < 127 with 0.000 GiB rebalance VRAM overhead (9.283 GiB steady ==
+    9.283 GiB rebalance step).
+
+1.3 Causal Resolution of Round-2 §2.2 (Off-Policy EXP-A vs. On-Policy PRIMAL v3.1)
+--------------------------------------------------------------------------------
+1. Off-Policy Continuous Control (EXP-A — Layer-Hooked 8-Bit AdamW at lr_peak = 2e-4):
+   - Round-1's 8-bit AdamW control (lr_peak = 1e-5, 400 b=1 micro-steps = 819,200
+     tokens; 50 8-micro-step equivalents) updated BF16 weights directly without FP32
+     master weights; at |w| ~ 0.03125, 0.5 ULP_BF16 = 2^-13 ~ 1.22e-4 dead-zoned
+     sub_lr = 1.25e-6 (max |dw| <= 0.0005, WT2 PPL 14.21 -> 14.15, GSM8K 86.20%).
+   - Raising lr_peak to 2e-4 (sub_lr = 2.5e-5, 120 b=1 micro-steps = 245,760 tokens)
+     on the IDENTICAL Round-1/2 off-policy terse stream overcame BF16 ULP dead-zoning
+     (sample Layer-18 q_proj max |dw| = 0.00108, matching PRIMAL v3's WT2 Word PPL at
+     13.63 vs. 13.71) and collapsed full GSM8K-1319 to 72.63% [70.20, 74.98] (958 /
+     1,319; first-200 slice = 75.50%) while compressing mean_gen_tokens from 331.0 ->
+     113.7 (boxed = 98.3%, trunc = 0.38%). Both optimizers degrade identically when
+     forced to imitate off-policy ~110-token rationales.
+
+2. On-Policy PRIMAL v3.1 Training & Methodology Scope (primal_v3_1_onpolicy_stream.pt):
+   - Generated greedy responses from untouched Qwen2.5-3B-Instruct across 700 prompts
+     (420 gsm8k_train + 280 MetaMathQA, strictly deduplicated via normalized string
+     keys against all 1,319 GSM8K test questions and 200 held-out GSM8K-TrainVal200
+     questions), retaining ONLY verified-correct \boxed{} solutions: 645 / 700
+     accepted (92.14%), mean_onpolicy_trace_tokens = 330.7.
+   - Packed 100 B=2 micro-batches (L=2048, grad_accum=4 -> 25 PRIMAL steps = 409,600
+     tokens; stream sample draws: onpolicy_math_cot=369, magicoder=86, codefeedback=70,
+     fineweb_edu=145, cosmopedia=76; T=24->30, vote_gain=0.36->0.16, decay=1.00,
+     scale_aware_votes=True, aux_lr=1e-5).
+   - Validation & Calibration Split Hygiene Disclosure:
+     GSM8K-1319 test and all 9 EleutherAI zero-shot benchmarks had ZERO overlap with
+     training, validation, or P4_0 calibration. Checkpoints at Steps 10, 15, 20, 25
+     were scored on held-out SFT validation (100 items), held-out GSM8K-TrainVal200
+     (train split: 91.0% -> 92.5% -> 92.0% -> 92.5%), and WikiText-2 (wt_bundle =
+     wikitext-2-raw-v1 test split: PPL 13.60 -> 13.78 -> 13.56 -> 13.58), selecting
+     final Step 25/25. Exported V3_P4_0 estimated unlabeled input channel variances
+     H_j = E[x_j^2] on 16,384 tokens from wt_bundle.
+   - Step-25 Update Anatomy: changed_params = 517,472 / 3,085,697,024 (0.0168%),
+     max |dq| = 19 ticks, max |q| = 123, rebalanced_blocks_unique = 5,523:
+     embed_tokens 0.0135%, q_proj 0.0422%, k_proj 0.0610%, v_proj 0.0390%
+     (v_proj / q_proj = 0.92x — zero GQA kurtosis bias), o_proj 0.0075%,
+     gate_proj 0.0179%, up_proj 0.0195%, down_proj 0.0095%.
+
+================================================================================
+2. FULL-SPLIT BENCHMARKS, EXACT FP32 AUDIT & 4-BIT MANIFOLD ABLATION
+================================================================================
+
+2.1 Unconfounded Full-Split Zero-Shot + GSM8K-1319 Suite
+--------------------------------------------------------------------------------
+All 9 EleutherAI tasks use full un-subsampled splits (27,118 items total) plus full
+GSM8K test (n=1,319, max_new_tokens=1,024, greedy ChatML). Explicit Precision Note:
+All columns in Table 2.1 run Hugging Face AutoModelForCausalLM in BF16 (matching
+shipped BF16 safetensors for Q8_0 -> BF16 and BF16-dequantized V3_P4_0); exact
+IEEE-754 FP32 V3_Q8_0 weights are audited separately in Table 2.3 below.
+
+| Benchmark (Full Split) | Qwen2.5-3B Base | Qwen2.5-3B-Instruct | AdamW8bit lr=1e-5 (Off-Pol, 819K tok) | AdamW8bit lr=2e-4 (Off-Pol, 246K tok) | PRIMAL v3.1 (Q8_0 -> BF16) | PRIMAL v3.1 (P4_0, 1.805 GiB) |
+|---|---:|---:|---:|---:|---:|---:|
+| WikiText-2 BPB / Word PPL | 0.6929 / 13.14 | 0.7139 / 14.21 | 0.7128 / 14.15 | — / 13.63 | 0.7018 / 13.58 | 0.7116 / 14.09 |
+| LAMBADA (n=5,153) acc | 66.83% | 65.90% | 66.06% | — | 66.97% | 67.67% |
+| ARC-Easy (n=2,376) acc_norm | 74.24% | 73.70% | 73.95% | — | 79.42% | 77.65% |
+| ARC-Challenge (n=1,172) acc_norm | 47.10% | 48.12% | 48.55% | — | 51.19% | 50.09% |
+| SciQ-RC (n=1,000) acc_norm | 94.10% | 91.80% | 92.50% | — | 96.00% | 95.60% |
+| SciQ-ClosedBook (n=1,000) acc_norm | 78.20% | 84.20% | 84.50% | — | 88.50% | 86.90% |
+| PIQA (n=1,838) acc_norm | 78.84% | 78.13% | 78.51% | — | 78.67% | 78.62% |
+| HellaSwag (n=10,042) acc_norm | 73.57% | 74.98% | 74.77% | — | 73.90% | 72.72% |
+| Winogrande (n=1,267) acc | 69.06% | 69.38% | 70.01% | — | 69.77% | 68.90% |
+| BoolQ (n=3,270) acc | 77.52% | 79.69% | 79.60% | — | 80.12% | 80.18% |
+| 8-Task MC Mean (Full Splits) | 74.08% | 75.00% | 75.30% | — | 77.20% | 76.33% |
+| 9-Task Zero-Shot Mean (Full) | 73.27% | 73.99% | 74.27% | — | 76.06% | 75.37% |
+| GSM8K Full (n=1,319, 1024 tok) | — | 85.52% [83.6,87.4] | 86.20% [84.4,88.2] | 72.63% [70.2,75.0] | 85.60% [83.7,87.4] | 84.69% [82.7,86.6] |
+| GSM8K Boxed / Truncated % | — | 99.92% / 0.08% | 99.85% / 0.15% | 98.30% / 0.38% | 99.85% / 0.15% | 99.92% / 0.08% |
+| GSM8K Mean Generated Tokens | — | 331.0 tok | 332.6 tok | 113.7 tok | 323.2 tok | 321.6 tok |
+
+2.2 Paired 2,000-Resample Bootstrap 95% CIs & Continuity-Corrected McNemar Tests
+--------------------------------------------------------------------------------
+1. PRIMAL v3.1 (Q8_0 -> BF16) vs. Untouched Qwen2.5-3B-Instruct (BF16):
+   - GSM8K-1319:      +0.08% (95% CI [-1.52%, +1.59%],  60W /  59L, McNemar p = 1.00000)
+   - ARC-Easy:        +5.72% (95% CI [+4.46%, +7.07%], 187W /  51L, McNemar p < 0.00001)
+   - ARC-Challenge:   +3.07% (95% CI [+1.28%, +4.95%],  83W /  47L, McNemar p = 0.00214)
+   - SciQ-RC:         +4.20% (95% CI [+2.80%, +5.60%],  48W /   6L, McNemar p < 0.00001)
+   - SciQ-ClosedBook: +4.30% (95% CI [+2.70%, +6.00%],  56W /  13L, McNemar p < 0.00001)
+   - LAMBADA:         +1.07% (95% CI [+0.33%, +1.79%], 209W / 154L, McNemar p = 0.00459)
+   - PIQA:            +0.54% (95% CI [-0.49%, +1.69%],  63W /  53L, McNemar p = 0.40336)
+   - BoolQ:           +0.43% (95% CI [-0.64%, +1.59%], 176W / 162L, McNemar p = 0.47950)
+   - Winogrande:      +0.39% (95% CI [-1.10%, +1.89%],  54W /  49L, McNemar p = 0.69348)
+   - HellaSwag:       -1.08% (95% CI [-1.46%, -0.72%], 136W / 244L, McNemar p < 0.00001)
+
+2. PRIMAL v3.1 (Q8_0 -> BF16) vs. Untouched Qwen2.5-3B Base (BF16):
+   - ARC-Easy:        +5.18% (95% CI [+4.00%, +6.40%], 174W /  51L, McNemar p < 0.00001)
+   - ARC-Challenge:   +4.10% (95% CI [+2.22%, +5.97%],  90W /  42L, McNemar p = 0.00004)
+   - SciQ-RC:         +1.90% (95% CI [+0.80%, +3.10%],  25W /   6L, McNemar p = 0.00123)
+   - SciQ-ClosedBook: +10.30% (95% CI [+8.30%, +12.6%], 115W /  12L, McNemar p < 0.00001)
+   - BoolQ:           +2.60% (95% CI [+1.19%, +4.07%], 338W / 253L, McNemar p = 0.00055)
+   - Winogrande:      +0.71% (95% CI [-1.10%, +2.29%],  72W /  63L, McNemar p = 0.49112)
+   - HellaSwag:       +0.33% (95% CI [-0.04%, +0.72%], 210W / 177L, McNemar p = 0.10381)
+   - LAMBADA:         +0.14% (95% CI [-0.64%, +0.89%], 195W / 188L, McNemar p = 0.75916)
+   - PIQA:            -0.16% (95% CI [-1.03%, +0.76%],  34W /  37L, McNemar p = 0.81238)
+
+3. PRIMAL v3.1 (P4_0, 1.805 GiB) vs. Untouched Qwen2.5-3B-Instruct (BF16, 5.75 GiB):
+   - GSM8K-1319:      -0.83% (95% CI [-2.73%, +1.06%],  76W /  87L, McNemar p = 0.43347)
+   - LAMBADA:         +1.77% (95% CI [+0.93%, +2.62%], 290W / 199L, McNemar p = 0.00005)
+   - ARC-Easy:        +3.96% (95% CI [+2.61%, +5.30%], 169W /  75L, McNemar p < 0.00001)
+   - SciQ-RC:         +3.80% (95% CI [+2.40%, +5.30%],  47W /   9L, McNemar p < 0.00001)
+   - SciQ-ClosedBook: +2.70% (95% CI [+1.00%, +4.40%],  51W /  24L, McNemar p = 0.00268)
+
+2.3 Exact V3_Q8_0 (IEEE-754 FP32 Product) vs. Exported BF16 Safetensors Audit
+--------------------------------------------------------------------------------
+Because int8 (7 magnitude bits) * fp16 (11 significand bits) requires <= 18 <= 24
+significand bits, V3_Q8_0 is 100% lossless in IEEE-754 float32, whereas exporting to
+BF16 safetensors (8 significand bits) rounds mantissas (93.75% top-1 greedy token
+agreement). Table 2.3 evaluates exact FP32 V3_Q8_0 vs. exported BF16 safetensors:
+
+| Benchmark | Exact V3_Q8_0 (IEEE-754 FP32) | Exported Safetensors (BF16) | Delta (BF16 - FP32) |
+|---|---:|---:|---:|
+| WikiText-2 BPB / Word PPL | 0.7021 / 13.60 | 0.7018 / 13.58 | -0.0003 / -0.02 |
+| LAMBADA (n=1,000) acc | 67.50% | 67.20% | -0.30% |
+| ARC-Easy (n=2,376) acc_norm | 79.38% | 79.42% | +0.04% |
+| ARC-Challenge (n=1,172) acc_norm | 51.37% | 51.19% | -0.18% |
+| SciQ-RC (n=1,000) acc_norm | 95.90% | 96.00% | +0.10% |
+| SciQ-ClosedBook (n=1,000) acc_norm | 88.70% | 88.50% | -0.20% |
+| Mean Absolute Accuracy Delta | — | — | 0.16% |
+
+2.4 V3_P4_0 Signed-Scale Proof & 4-Bit Quantization Manifold Ablation
+--------------------------------------------------------------------------------
+In tools/vlt3.py (quantize_p4_0_hessian), block scale d_b is a SIGNED IEEE-754 FP16
+scalar: on positive-dominated blocks (mx > 0), d_b = mx * (-r / 127.0) < 0 flips
+LUT [-127,-101,-80,-62,-46,-33,-21,-10,0,10,21,33,46,62,80,101] polarity so +mx maps
+to (-127) * d_b = +mx. Across all 4 variants below, the identical hybrid Q8_0 subset
+is held fixed (embed_tokens, all 36 layers k_proj and v_proj, plus boundary layers
+0, 1, 34, 35 q_proj and o_proj; remaining 2.703B weights quantized at 18 B / 32 =
+1.805 GiB / 1,848.53 MiB total .vlt3 size) under identical H_j = E[x_j^2]:
+
+| 4-Bit Manifold Variant (1.805 GiB / 1,848.53 MiB) | Scale Polarity | Sum Hessian Sq Err | Unweighted MSE | WikiText-2 BPB | WikiText-2 Word PPL |
+|---|---|---:|---:|---:|---:|
+| V3_P4_0 (Prime-Harmonic LUT — Shipped) | Signed FP16 d_b | 4,010.886 | 11,318.171 | 0.7118 | 14.09 |
+| V3_P4_0 (Unsigned Scale Ablation) | Unsigned d_b >= 0 | 4,544.549 | 12,749.162 | 0.7138 | 14.20 |
+| NF4 (16-Level NormalQuantile, Dettmers [-1,+1]) | Unsigned d_b >= 0 | 4,592.646 | 12,818.592 | 0.7143 | 14.23 |
+| V3_Q4_0 (Uniform Linear [-128..+112]) | Signed FP16 d_b | 6,247.441 | 13,581.115 | 0.7167 | 14.36 |
+
+================================================================================
+3. SPARSE HEAD-GATED SHINGLE FIX, 172-PROBE LONG-CONTEXT SUITE & C99 PROOF
+================================================================================
+
+3.1 Sparse 1-Head/GQA-Group Shingle Gating (src/vault_v3_model.py & runtime/vault3.c)
+--------------------------------------------------------------------------------
+VAULT v3's O(1) KV cache (window W=1024, seg_budget B_seg=1024, max_sink=512)
+combines:
+  1. Query-Agnostic Neural Eviction: SegmentScorer MLP (1,585,665 FP32 params over
+     layers 10, 20, 30) + APL causal EMA habituation (f - 0.65 * ema).
+  2. Pre-RoPE Key Caching & Contiguous Relative Re-Rotation ([-M_cnt - S .. 2W - 1],
+     <= 3,584 relative positions), preventing 32K RoPE horizon OOD breakdown out to
+     100K+ tokens while explicitly trading away exact inter-segment gap distance.
+  3. Sparse Head-Gated (1 Query Head per GQA Group = 2 / 16 Heads on 3B) 2-Tier
+     FNV-1a Shingle / Hop-2 Resonance across layers 9..33 (l_lo=9, l_mid=18, l_hi=34):
+     In _pack_head_bias and C99 attn_run, free_h = grp - 1 = 7 applies shingle/Hop-2
+     bias ONLY to query heads h in {7, 15} (12.5%), leaving 14 / 16 (87.5%) of heads
+     completely undistorted for multi-value / dual-needle softmax aggregation. Users
+     can also disable shingle bias dynamically via enable_shingle_bias=False or C99
+     --no-shingle.
+
+3.2 VAULT 82-Probe Suite (8K -> 100.5K) — Sparse 2/16 Shingle vs. Pure MLP+EMA
+--------------------------------------------------------------------------------
+| Probe Category | PRIMAL v3.1 Q8_0 (Sparse 2/16 Shingle ON) | PRIMAL v3.1 Q8_0 (Shingle OFF: MLP+EMA) | PRIMAL v3.1 P4_0 (Sparse 2/16 Shingle ON) |
+|---|---:|---:|---:|
+| Dense Registry (24 facts, B=1024) |  7 /  8 ( 87.5%) |  6 /  8 ( 75.0%) |  7 /  8 ( 87.5%) |
+| Dense Registry (48 facts, B=1024) |  8 /  8 (100.0%) |  8 /  8 (100.0%) |  8 /  8 (100.0%) |
+| 8.5K Multi-Fact (26 needles, L=8,465) | 25 / 26 ( 96.2%) | 22 / 26 ( 84.6%) | 25 / 26 ( 96.2%) |
+| 2-Hop Evicted Relational Join (n=8) |  7 /  8 ( 87.5%) |  3 /  8 ( 37.5%) |  7 /  8 ( 87.5%) |
+| Contradictory Temporal (Latest / t=1 / Rollback t=2) | 18 / 18 (100.0%) | 18 / 18 (100.0%) | 18 / 18 (100.0%) |
+| Scorer-Sponge Attack (120 authority sponges) |  1 /  1 (PASS)   |  1 /  1 (PASS)   |  1 /  1 (PASS)   |
+| Minified JSON Extraction (n=8) |  8 /  8 (100.0%) |  8 /  8 (100.0%) |  7 /  8 ( 87.5%) |
+| Multi-Constraint System Auto-Pin (L=2,421) |  1 /  1 (PASS)   |  1 /  1 (PASS)   |  1 /  1 (PASS)   |
+| Extreme Horizon Dual-Needle (32,867 & 100,452 tok) |  4 /  4 (100.0%) |  4 /  4 (100.0%) |  4 /  4 (100.0%) |
+| TOTAL (82 Probes) | 79 / 82 ( 96.34%) | 71 / 82 ( 86.59%) | 78 / 82 ( 95.12%) |
+
+GPU VRAM on Q8_0 at 32,867 vs. 100,452 tokens: 6.689 GiB vs. 6.689 GiB (0.000 GiB
+delta across +67,585 tokens at ~1,046 tok/s prefill).
+
+3.3 External Non-Isomorphic RULER Suite (4K -> 64K, 90 Probes) & 172-Probe Aggregate
+--------------------------------------------------------------------------------
+Natural-language essay haystacks with biographical prose needles (NIAH-Prose,
+MultiKey-4, MultiValue-4) + 5-Hop Variable Tracking (VAR_ALPHA -> VAR_OMEGA):
+
+| Context Length L | SWA + Sink (seg_budget=0) | Pure MLP+EMA (Shingle OFF) | Old v3.0 (16/16 Shingle ON) | Shipped v3.1 (Sparse 2/16 Shingle ON) |
+|---|---:|---:|---:|---:|
+|  4,096 tok |  8 / 18 (44.4%) | 18 / 18 (100.0%) [mv=8/8, vt5=2/2] | 16 / 18 (88.9%) [mv=7/8] | 17 / 18 ( 94.4%) [mv=7/8, vt5=2/2] |
+|  8,192 tok |  0 / 18 ( 0.0%) | 17 / 18 ( 94.4%) [mv=7/8, vt5=2/2] | 12 / 18 (66.7%) [mv=3/8] | 18 / 18 (100.0%) [mv=8/8, vt5=2/2] |
+| 16,384 tok |  0 / 18 ( 0.0%) | 17 / 18 ( 94.4%) [mv=7/8, vt5=2/2] | 11 / 18 (61.1%) [mv=3/8] | 17 / 18 ( 94.4%) [mv=7/8, vt5=2/2] |
+| 32,768 tok |  0 / 18 ( 0.0%) | 18 / 18 (100.0%) [mv=8/8, vt5=2/2] | 13 / 18 (72.2%) [mv=3/8] | 15 / 18 ( 83.3%) [mv=6/8, vt5=1/2] |
+| 65,536 tok |  0 / 18 ( 0.0%) | 18 / 18 (100.0%) [mv=8/8, vt5=2/2] | 11 / 18 (61.1%) [mv=3/8] | 16 / 18 ( 88.9%) [mv=6/8, vt5=2/2] |
+| RULER Total (90) |  8 / 90 ( 8.89%) | 88 / 90 ( 97.78%) | 63 / 90 (70.00%) | 83 / 90 ( 92.22%) |
+| VAULT Total (82) | — | 71 / 82 ( 86.59%) | 77 / 82 (93.90%) | 79 / 82 ( 96.34%) |
+| COMBINED (172) | — | 159 / 172 ( 92.44%) | 140 / 172 (81.40%) | 162 / 172 ( 94.19%) |
+
+3.4 Disclosed Architectural Scope Boundaries (Pigeonhole & Corpus-Counting Tasks)
+--------------------------------------------------------------------------------
+1. Homogeneous High-Entropy Pigeonhole Stress Test (100% JSON Ledger, ZERO Filler):
+   - 64 rows (L=2,478): 10/10 (100.0%) | 128 rows (L=4,938): 6/10 (60.0%) |
+     256 rows (L=9,930): 5/10 (50.0%) | 512 rows (L=19,914): 2/10 (20.0%) |
+     1,024 rows (L=39,906): 2/10 (20.0%). Query-agnostic eviction over 100%
+     uniform-priority records is bounded by O((2W + B_seg) / L).
+2. Global Word-Frequency / Aggregation Tasks (e.g., RULER CWE / FWE):
+   - Explicitly out-of-scope for O(1) eviction: APL causal EMA habituation
+     (f - 0.65 * ema) is specifically designed to habituate away repetitive tokens
+     rather than count global corpus frequencies.
+
+3.5 Freestanding C99 High-Pressure Eviction Proof (8,457 Tokens, 86.2% Eviction)
+--------------------------------------------------------------------------------
+Executed via compiled C binary benchmarks/bench_c99_8k_26needles linked against
+updated sparse-head-gated runtime/vault3.c on v3.1 vault_v3_3b_p4_0_primal.vlt3:
+  - Candidate evicted region: 7,422 tokens; segment budget: 1,024 (13.8% survival,
+    86.2% eviction pressure); fixed state arena: 398.55 MB decimal (380.09 MiB).
+  - SEG ON (seg_budget = 1,024):  26 / 26 (100.0%), 39 unique retained segments,
+    peak_rss = 2,617.45 MiB (2.556 GiB).
+  - --noseg Control (seg_budget = 0): 0 / 26 (0.0%), peak_rss = 2,617.07 MiB.
+
+================================================================================
+4. ARM64 NEON EXECUTION, CLEAN-ROOM HF PACKAGING & DUAL-LICENSE COMPLIANCE
+================================================================================
+
+4.1 Freestanding ARM64 NEON Execution Parity vs. x86_64 AVX2 (qemu-aarch64-static)
+--------------------------------------------------------------------------------
+  - Zero-libc static freestanding AArch64 binary compiled with:
+    clang --target=aarch64-linux-gnu -static -O3 -ffreestanding -nostdlib
+          -fuse-ld=lld -DV3_BAREMETAL_LINUX -Wall -Wextra -Werror
+    and executed under qemu-aarch64-static 8.2.2 against all 36 layers of v3.1
+    vault_v3_3b_p4_0_primal.vlt3 (exercising V3_P4_0 vqtbl1q_s8 + vfmaq_f32,
+    V3_Q8_0, V3_F32, RoPE, RMSNorm, SwiGLU, GQA, and VTOK BPE; 23-token prompt +
+    10 greedy decode steps; >2W segment eviction/shingle tested in §3.5):
+      * Probe logits (x86_64 AVX2 vs. AArch64 NEON):
+        id 0: 4.837568 vs 4.837561 | id 16: 32.083756 vs 32.083752 |
+        id 17: 19.869396 vs 19.869380 | id 19: 16.676854 vs 16.676848 |
+        id 151643: 4.842084 vs 4.842098 | id 151645: 0.264454 vs 0.264450.
+      * max_abs_logit_diff = 0.000016 (1.6e-5).
+      * Greedy 10-token ID sequence: [16, 19, 19, 151645, 198, 151643, 33975, 25,
+        2585, 646] — 10 / 10 (100.0%) exact token ID match.
+  - Also patched macOS (__APPLE__) ru_maxrss byte-vs-KiB scaling in vault3_host.c,
+    and verified 0 external undefined symbols across scalar, AVX2, and NEON .o files.
+
+4.2 Split HF Repositories, External Tokenizer Fix & Clean-Room 0.00 B/tok Proof
+--------------------------------------------------------------------------------
+  - Main HF Repo (dist/hf_vault_v3_3b -> batteryphil/VAULT-v3-3B-PRIMAL):
+    5.765 GiB (0 .vlt3 files; Shards 1 & 2 BF16 backbone + Shard 3 FP32
+    SegmentScorer preserved via _keep_in_fp32_modules + Apache-2.0 wrapper + C99
+    runtime/ source).
+  - Companion Binary Repo (dist/hf_vault_v3_3b_vlt3 -> batteryphil/VAULT-v3-3B-PRIMAL-VLT3):
+    4.870 GiB total (1.805 GiB / 1,848.53 MiB V3_P4_0 + 3.064 GiB / 3,137.53 MiB
+    V3_Q8_0 + C99 runtime/).
+  - Clean-Room Verification from /tmp (PYTHONPATH="", peer_review_cleanroom_hf_v2.json):
+      * External Hub Tokenizer Resolution: VAULTv3HFForCausalLM.from_pretrained
+        resolves tokenizer.json directly from pretrained_model_name_or_path (local
+        dir or transformers.utils.hub.cached_file) with zero local cache paths;
+        verified 151,665 non-empty raw byte entries, seg_scorer dtype = float32,
+        and forward()/fallback-generate() enable_shingle_bias=False execution.
+      * Base loaded GPU memory: 6,000.51 MiB.
+      * model.generate() Peak GPU VRAM with CPU-streamed 1,024-token prefill chunks:
+          - 15,807 prompt tokens: 6,846.80 MiB | hit=True ('VK-1638-ALPHA') | 15.41s
+          - 31,626 prompt tokens: 6,847.80 MiB | hit=True ('VK-3276-BRAVO') | 29.20s
+          - 63,264 prompt tokens: 6,847.80 MiB | hit=True ('VK-6553-DELTA') | 59.49s
+          - 96,926 prompt tokens: 6,847.80 MiB | hit=True ('VK-1004-OMEGA') | 91.80s
+        (+1.00 MiB from 15.8K -> 31.6K as the 1,024-slot segment bank fills;
+        strictly 0.00 MiB / 0.0000 B/tok from 31,626 -> 96,926 tokens).
+      * tools/export_qwen2_compat.py verified /home -> /tmp: realpath + EXDEV
+        fallback, WARNING_NO_O1_MEMORY.txt + stderr warning, loads cleanly as
+        Qwen2ForCausalLM (trust_remote_code=False -> '12 * 12 equals 144.').
+
+4.3 Split Code / Weight Licensing & Network-Copyleft Guardrails
+--------------------------------------------------------------------------------
+  - Top-of-README & LICENSE Network-Copyleft Disclosure: Explicitly warns users that
+    while modeling_vault_v3.py and configuration_vault_v3.py are Apache-2.0, calling
+    AutoModelForCausalLM.from_pretrained(..., trust_remote_code=True) dynamically
+    imports vault_v3_core.py (GNU AGPL-3.0-or-later), triggering AGPLv3 Section 13
+    for network-hosted services unless covered by a VAULT Commercial Software License
+    (or exported to stock Qwen2ForCausalLM via tools/export_qwen2_compat.py with
+    trust_remote_code=False).
+  - Non-Commercial Model Weight Disclaimer (LICENSE, LICENSE-COMMERCIAL.md, README.md):
+    Explicitly states that all .safetensors and .vlt3 weights derive from
+    Qwen/Qwen2.5-3B-Instruct under Alibaba Cloud's Qwen RESEARCH LICENSE AGREEMENT
+    ("Built with Qwen"), and that a VAULT Commercial Software License covers original
+    VAULT software ONLY and grants ZERO commercial rights to Qwen2.5-3B-derived
+    neural network weights without separate commercial licensing from Alibaba Cloud.
+  - Upstream Dataset Provenance (NOTICE): Discloses on-policy Qwen2.5-3B-Instruct
+    rejection-sampled math traces over deduplicated openai/gsm8k + meta-math/MetaMathQA
+    prompts, Magicoder-OSS-Instruct-75K, CodeFeedback-Filtered-Instruction,
+    FineWeb-Edu, and Cosmopedia-v2.
+================================================================================

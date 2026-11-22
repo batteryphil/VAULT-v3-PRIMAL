@@ -1,0 +1,36 @@
+{
+  "binary_x86_64_avx2": "benchmarks/test_arm64_neon_x86",
+  "binary_aarch64_neon": "benchmarks/test_arm64_neon_aarch64",
+  "emulator": "qemu-aarch64-static 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+  "compiler_aarch64": "clang --target=aarch64-linux-gnu -static -O3 -ffreestanding -nostdlib -fuse-ld=lld -DV3_BAREMETAL_LINUX -Wall -Wextra -Werror",
+  "model_tested": "vault_v3_3b_p4_0_primal.vlt3 (PRIMAL v3.1, 36 layers, V3_P4_0 vqtbl1q_s8 + V3_Q8_0 + V3_F32 + 1/8 sparse head-gated shingle)",
+  "prompt_tokens": 23,
+  "x86_64_avx2": {
+    "probe_logits": {
+      "0": 4.837568,
+      "16": 32.083756,
+      "17": 19.869396,
+      "19": 16.676854,
+      "220": 10.899846,
+      "151643": 4.842084,
+      "151645": 0.264454
+    },
+    "greedy_10_token_ids": [16, 19, 19, 151645, 198, 151643, 33975, 25, 2585, 646],
+    "decoded_prefix": "144<|im_end|>\n<|endoftext|>Human: How can"
+  },
+  "aarch64_neon": {
+    "probe_logits": {
+      "0": 4.837561,
+      "16": 32.083752,
+      "17": 19.869380,
+      "19": 16.676848,
+      "220": 10.899845,
+      "151643": 4.842098,
+      "151645": 0.264450
+    },
+    "greedy_10_token_ids": [16, 19, 19, 151645, 198, 151643, 33975, 25, 2585, 646],
+    "decoded_prefix": "144<|im_end|>\n<|endoftext|>Human: How can"
+  },
+  "max_abs_logit_diff": 0.000016,
+  "greedy_token_id_exact_match": "10/10 (100.0%)"
+}
