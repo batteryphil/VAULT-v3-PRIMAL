@@ -56,7 +56,7 @@ import torch.nn.functional as F
 from datasets import load_dataset
 from tokenizers import Tokenizer
 
-from primal_v7.vault_primal import (
+from primal.vault_primal import (
     Q8StepEngine,
     VAULTPrimalConfig,
     VAULTPrimalForCausalLM,

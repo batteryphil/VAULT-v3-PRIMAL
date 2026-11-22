@@ -6,7 +6,7 @@
   "models": {
     "bf16": {
       "title": "VAULT-v3-1.5B BF16 Master",
-      "vlt3_path": "/home/phil/.gemini/antigravity/scratch/vault/dist/vault_v3_1.5b_bf16.vlt3",
+      "vlt3_path": "dist/vault_v3_1.5b_bf16.vlt3",
       "file_mib": 2953.09,
       "wikitext2": {
         "bpb": 0.7541,
@@ -174,7 +174,7 @@
     },
     "q4_0": {
       "title": "VAULT-v3-1.5B Hybrid Q4_0 (Linear)",
-      "vlt3_path": "/home/phil/.gemini/antigravity/scratch/vault/dist/vault_v3_1.5b_q4_0.vlt3",
+      "vlt3_path": "dist/vault_v3_1.5b_q4_0.vlt3",
       "file_mib": 967.78,
       "wikitext2": {
         "bpb": 0.775,
@@ -343,7 +343,7 @@
     },
     "p4_0_primal": {
       "title": "VAULT-v3-1.5B Hybrid P4_0 PRIMAL (Prime-Harmonic)",
-      "vlt3_path": "/home/phil/.gemini/antigravity/scratch/vault/dist/vault_v3_1.5b_p4_0_primal.vlt3",
+      "vlt3_path": "dist/vault_v3_1.5b_p4_0_primal.vlt3",
       "file_mib": 967.78,
       "wikitext2": {
         "bpb": 0.7632,

@@ -648,7 +648,7 @@ class VAULTPrimalConfig:
             head_dim=d_model // n_heads,
             d_ff=int(qc["intermediate_size"]),
             rms_eps=float(qc.get("rms_norm_eps", 1e-6)),
-            rope_theta=float(qc.get("rope_theta", 1_000_000.0)),
+            rope_theta=float(qc.get("rope_theta", (qc.get("rope_parameters") or {}).get("rope_theta", 1_000_000.0))),
             tie_embeddings=bool(qc.get("tie_word_embeddings", True)),
             window=int(window),
             n_sink=int(n_sink),
@@ -779,6 +779,9 @@ class VAULTPrimalForCausalLM(nn.Module):
         self.ce_chunk_size = int(ce_chunk_size) if ce_chunk_size is not None else (512 if cfg.vocab_size >= 65536 else 4096)
 
         self.embed_tokens = PrimeQ8BlockTiedEmbedding(cfg.vocab_size, cfg.d_model, skip_init=skip_init)
+        self.lm_head: PrimeQ8BlockTiedEmbedding | None = (
+            None if cfg.tie_embeddings else PrimeQ8BlockTiedEmbedding(cfg.vocab_size, cfg.d_model, skip_init=skip_init)
+        )
         self.rope = VaultRotaryEmbedding(cfg.head_dim, max_seq_len=max(2048, 2 * cfg.window), theta=cfg.rope_theta)
         self.layers = nn.ModuleList([VAULTPrimalLayer(cfg, skip_init=skip_init) for _ in range(cfg.n_layers)])
         self.norm = VaultRMSNorm(cfg.d_model, eps=cfg.rms_eps)
@@ -801,12 +804,13 @@ class VAULTPrimalForCausalLM(nn.Module):
             else:
                 x = layer(x, cos, sin)
         x = self.norm(x)
+        head_mod = self.embed_tokens if self.lm_head is None else self.lm_head
         if targets is not None and not return_logits:
-            loss = self.embed_tokens.chunked_cross_entropy(
+            loss = head_mod.chunked_cross_entropy(
                 x, targets, chunk_size=self.ce_chunk_size, ignore_index=ignore_index
             )
             return None, loss
-        logits = self.embed_tokens.project(x)
+        logits = head_mod.project(x)
         loss = None
         if targets is not None:
             loss = F.cross_entropy(
@@ -859,7 +863,11 @@ def load_pretrained_qwen2_into_primal_q8(
             loaded += 1
             return True
         if key == "lm_head.weight":
-            return True  # tied to embed_tokens
+            if model.lm_head is not None:
+                model.lm_head.load_from_float_weight(tensor, headroom=headroom, min_d=min_d)
+                loaded += 1
+                total_disc += tensor.numel()
+            return True
         if not key.startswith("layers."):
             return False
         parts = key.split(".")
@@ -895,7 +903,7 @@ def load_pretrained_qwen2_into_primal_q8(
                     raise KeyError(f"Unrecognized Qwen2 safetensors key: {k}")
                 del t
 
-    expected_tensors = 2 + 12 * model.cfg.n_layers
+    expected_tensors = (2 if model.lm_head is None else 3) + 12 * model.cfg.n_layers
     assert loaded == expected_tensors, f"Loaded {loaded} tensors, expected {expected_tensors}"
     return {
         "loaded_tensors": loaded,
@@ -1197,6 +1205,12 @@ def export_vault_primal_vlt3(
         (cfg.d_model,),
         vlt3.encode_tensor(model.norm.weight, vlt3.F32),
     )
+    if model.lm_head is not None:
+        raw_tensors["lm_head.weight"] = (
+            vlt3.Q8_0,
+            (cfg.vocab_size, cfg.d_model),
+            model.lm_head.pack_v3_q8_0_bytes(),
+        )
 
     # 2. Per-layer tensors (12 per layer matching L_KINDS exactly)
     for li, layer in enumerate(model.layers):

@@ -50,7 +50,7 @@ from tokenizers import Tokenizer
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.cache_utils import DynamicCache
 
-from primal_v7.eval_peer_review_baselines import (
+from primal.eval_peer_review_baselines import (
     GSM8K_SYSTEM_PROMPT,
     GSM8K_USER_SUFFIX,
     eval_9task_full_and_1k,
@@ -59,11 +59,11 @@ from primal_v7.eval_peer_review_baselines import (
     load_all_9_tasks,
     score_pairs_hf_bf16,
 )
-from primal_v7.run_primal_v3_and_controls import (
+from primal.run_primal_v3_and_controls import (
     eval_gsm8k_val200_primal,
     paired_bootstrap_diff_ci,
 )
-from primal_v7.train_vault_v3_3b_primal import (
+from primal.train_vault_v3_3b_primal import (
     DEFAULT_QWEN_3B,
     DEFAULT_SYSTEM_PROMPT,
     VAULT_ROOT,
@@ -76,8 +76,8 @@ from primal_v7.train_vault_v3_3b_primal import (
     export_hessian_p4_0_from_primal_3b,
     extract_gsm8k_answer,
 )
-from primal_v7.train_vault_v3_3b_seg_scorer import _load_v3_mod, repack_vlt3_with_seg_scorer
-from primal_v7.vault_primal import (
+from primal.train_vault_v3_3b_seg_scorer import _load_v3_mod, repack_vlt3_with_seg_scorer
+from primal.vault_primal import (
     QK,
     Q8StepEngine,
     VAULTPrimalConfig,

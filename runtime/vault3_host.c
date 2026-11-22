@@ -197,6 +197,20 @@ static double now_s(void) {
 }
 
 static double peak_rss_mb(void) {
+#ifdef __linux__
+    FILE *fp = fopen("/proc/self/status", "r");
+    if (fp) {
+        char line[256];
+        while (fgets(line, sizeof(line), fp)) {
+            unsigned long kb = 0;
+            if (sscanf(line, "VmHWM: %lu kB", &kb) == 1 && kb > 0) {
+                fclose(fp);
+                return (double)kb / 1024.0;
+            }
+        }
+        fclose(fp);
+    }
+#endif
     struct rusage ru;
     if (getrusage(RUSAGE_SELF, &ru) != 0) return 0.0;
 #ifdef __APPLE__

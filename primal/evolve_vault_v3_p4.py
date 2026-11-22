@@ -41,7 +41,7 @@ from datasets import load_dataset
 from torch.utils.checkpoint import checkpoint
 from transformers import AutoTokenizer
 
-from primal_v7.discrete_ops import _stochastic_round_int
+from primal.discrete_ops import _stochastic_round_int
 
 warnings.filterwarnings("ignore", message=".*Flash Efficient attention.*")
 warnings.filterwarnings("ignore", message=".*Mem Efficient attention.*")

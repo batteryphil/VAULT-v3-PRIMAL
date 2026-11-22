@@ -105,9 +105,10 @@ clean:
 """
 
 
-CONFIGURATION_VAULT_V3_PY = '''# SPDX-License-Identifier: Apache-2.0
+CONFIGURATION_VAULT_V3_PY = '''# SPDX-License-Identifier: LicenseRef-Bartsch-Personal-Free-5Pct-Commercial
+# License: Free for Individuals & Non-Commercial Use; 5% Attributable Net Profit Share for Companies/Commercial Use (see LICENSE)
 # Copyright (c) 2026 Philip Bartsch (batteryphil)
-# HuggingFace AutoConfig definition for VAULT-v3 (Qwen2.5 + O(1) Segment-Evicted KV Memory).
+# HuggingFace AutoConfig definition for VAULT-v3 (O(1) Segment-Evicted KV Memory).
 
 from typing import List, Optional, Sequence
 from transformers import PretrainedConfig
@@ -185,14 +186,15 @@ class VAULTv3HFConfig(PretrainedConfig):
 '''
 
 
-MODELING_VAULT_V3_PY = '''# SPDX-License-Identifier: Apache-2.0
+MODELING_VAULT_V3_PY = '''# SPDX-License-Identifier: LicenseRef-Bartsch-Personal-Free-5Pct-Commercial
+# License: Free for Individuals & Non-Commercial Use; 5% Attributable Net Profit Share for Companies/Commercial Use (see LICENSE)
 # Copyright (c) 2026 Philip Bartsch (batteryphil)
 #
-# HuggingFace AutoModelForCausalLM wrapper for VAULT-v3-3B-PRIMAL:
+# HuggingFace AutoModelForCausalLM wrapper for VAULT-v3-PRIMAL:
 #   - Streams 1,024-token chunks from CPU RAM during `prefill()` when `prompt_len > 2 * window`,
 #     guaranteeing strict 0.000 B/tok O(1) GPU VRAM growth out to 10M+ tokens!
 #   - Pre-RoPE keys (`k_seg_raw`, `k_sink_raw`) are dynamically re-rotated into contiguous
-#     relative slots `[-M_cnt-S .. 2W-1]`, avoiding 32K RoPE horizon OOD degradation at any length.
+#     relative slots `[-M_cnt-S .. 2W-1]`, eliminating RoPE horizon OOD degradation at any length.
 
 import os
 from typing import Any, Dict, List, Optional
@@ -325,7 +327,7 @@ class VAULTv3HFForCausalLM(PreTrainedModel, GenerationMixin):
         self.model.embed_tokens = value
 
     def get_output_embeddings(self) -> Optional[nn.Module]:
-        return None
+        return getattr(self.model, "lm_head", None)
 
     def prepare_inputs_for_generation(
         self,
@@ -380,7 +382,6 @@ class VAULTv3HFForCausalLM(PreTrainedModel, GenerationMixin):
         so GPU VRAM growth with prompt length L is strictly 0.000 B/tok.
         """
         inp = inputs if inputs is not None else kwargs.get("input_ids", None)
-        # Drop caller's O(L) attention_mask tensor immediately to prevent unneeded GPU residency
         kwargs.pop("attention_mask", None)
         exotic = {
             "logits_processor", "stopping_criteria", "prefix_allowed_tokens_fn",
@@ -418,7 +419,6 @@ class VAULTv3HFForCausalLM(PreTrainedModel, GenerationMixin):
         dev = next(self.model.parameters()).device
         out_dev = inp.device
         prompt_len = int(inp.shape[1])
-        # Keep ultra-long prompts on CPU during chunked prefill for strict 0 B/tok GPU VRAM!
         x_prefill = inp.cpu() if prompt_len > 2 * self.config.window else inp.to(dev)
 
         def _get(name: str, default: Any):
@@ -447,13 +447,13 @@ class VAULTv3HFForCausalLM(PreTrainedModel, GenerationMixin):
         return_dict = bool(_get("return_dict_in_generate", False))
         streamer = kwargs.get("streamer", None)
 
-        eos_raw = _get("eos_token_id", [self.config.im_end_id, self.config.bos_token_id])
+        eos_raw = _get("eos_token_id", [self.config.eos_token_id, self.config.im_end_id])
         if isinstance(eos_raw, int):
             eos_set = {eos_raw, self.config.im_end_id}
         elif isinstance(eos_raw, (list, tuple, set)):
             eos_set = {int(t) for t in eos_raw} | {self.config.im_end_id}
         else:
-            eos_set = {self.config.im_end_id, self.config.bos_token_id}
+            eos_set = {self.config.eos_token_id, self.config.im_end_id}
 
         if streamer is not None:
             streamer.put(inp.cpu())
@@ -500,15 +500,29 @@ class VAULTv3HFForCausalLM(PreTrainedModel, GenerationMixin):
         self,
         tokenizer,
         prompt: str,
-        system_prompt: str = "You are VAULT-v3, a helpful, concise, and mathematically rigorous AI assistant.",
-        max_new_tokens: int = 256,
+        system_prompt: str = "",
+        max_new_tokens: int = 512,
         temperature: float = 0.0,
-        top_p: float = 0.9,
+        top_p: float = 0.95,
+        nothink: bool = False,
         seg_budget: Optional[int] = None,
         enable_shingle_bias: Optional[bool] = None,
     ) -> str:
-        """Convenience 1-line ChatML helper with strict O(1) CPU-streamed prefill."""
-        ids = build_chatml_ids(tokenizer, user_prompt=prompt, system_prompt=system_prompt)
+        """Convenience 1-line Chat helper with strict O(1) CPU-streamed prefill (supports both DeepSeek & ChatML)."""
+        if getattr(tokenizer, "chat_template", None):
+            msgs = []
+            if system_prompt:
+                msgs.append({"role": "system", "content": system_prompt})
+            msgs.append({"role": "user", "content": prompt})
+            txt = tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+            if nothink and txt.endswith("<think>\\n"):
+                txt = txt + "</think>\\n\\n"
+            elif nothink and txt.endswith("<think>"):
+                txt = txt + "\\n</think>\\n\\n"
+            ids = tokenizer.encode(txt, add_special_tokens=False)
+        else:
+            sys_p = system_prompt or "You are VAULT-v3, a helpful, concise, and mathematically rigorous AI assistant."
+            ids = build_chatml_ids(tokenizer, user_prompt=prompt, system_prompt=sys_p)
         inp_cpu = torch.tensor([ids], dtype=torch.long, device="cpu")
         out = self.generate(
             inp_cpu,
@@ -520,7 +534,7 @@ class VAULTv3HFForCausalLM(PreTrainedModel, GenerationMixin):
             enable_shingle_bias=self.config.enable_shingle_bias if enable_shingle_bias is None else bool(enable_shingle_bias),
         )
         reply_ids = out[0, len(ids):].tolist()
-        while reply_ids and reply_ids[-1] in (self.config.im_end_id, self.config.bos_token_id):
+        while reply_ids and reply_ids[-1] in (self.config.eos_token_id, self.config.im_end_id):
             reply_ids.pop()
         return tokenizer.decode(reply_ids, skip_special_tokens=True).strip()
 '''

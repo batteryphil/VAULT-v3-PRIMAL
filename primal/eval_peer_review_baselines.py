@@ -38,7 +38,7 @@ from huggingface_hub import snapshot_download
 from tokenizers import Tokenizer
 from transformers import AutoModelForCausalLM
 
-from primal_v7.train_vault_v3_3b_primal import (
+from primal.train_vault_v3_3b_primal import (
     DEFAULT_QWEN_3B,
     GSM8K_SYSTEM_PROMPT,
     GSM8K_USER_SUFFIX,
