@@ -175,6 +175,32 @@ python3 benchmarks/run_c99_8k_26needles.py
 
 ---
 
+## Multi-Modal Expansion: TTS, 1D-CNN Flows & Diffusion (`DiT`) (`tts/`)
+
+Reproducible script: [`tts/run_tts_trifecta_challenge.py`](tts/run_tts_trifecta_challenge.py) · Universal `Linear + Conv1d + ConvTranspose1d` engine: [`tts/primal_multimodal_ops.py`](tts/primal_multimodal_ops.py) · Raw JSON: [`benchmarks/results/vault_primal_tts_trifecta_report.json`](benchmarks/results/vault_primal_tts_trifecta_report.json)
+
+Evaluated across **12 held-out spoken prompts** (`0` overlap with calibration prompts) using `openai/whisper-small.en` round-trip ASR Word/Character Error Rate (`WER %` / `CER %`) and DTW-aligned `80`-band Log-Mel Spectral Distortion (`dB`):
+
+| Model & Architecture | Variant | Packed Size | Compression | `Whisper` `WER` $\downarrow$ | `Whisper` `CER` $\downarrow$ | Log-Mel Dist. $\downarrow$ | Discrete `PRIMAL` Flips |
+|---|---|---:|---:|---:|---:|---:|---:|
+| **`Tiny-Voca` (`4.54M`)**<br/>*RoPE Transformer + Source-Filter (`24 kHz`)* | `FP32` Reference | `18.15 MB` | `1.00x` | `3.95%` | `3.69%` | `0.00 dB` | — |
+| | `Q4_0` Linear (`4.5 bpw`) | `2.64 MB` | `6.87x` | `3.95%` | `3.69%` | `2.66 dB` | — |
+| | **`V3_P4_0` Prime LUT** | **`2.64 MB`** | **`6.87x`** | **`3.95%`** | **`3.69%`** | `3.38 dB` *(SC `0.698` < `0.733`)* | — |
+| | `V3_Q2_0` (`2.25 bpw` PTQ) | `1.38 MB` | `13.10x` | `5.08%` | `3.78%` | `6.20 dB` | `0` |
+| | **`V3_Q2_0 + PRIMAL`** | **`1.38 MB`** | **`13.10x`** | **`3.95%` (`0.0%` loss!)** | **`3.69%`** | **`5.66 dB`** | **`706` (`27s`)** |
+| **`VITS` (`29.04M` Active)**<br/>*`96.7%` 1D CNN WaveNet Flow + HiFi-GAN (`16 kHz`)* | `FP32` (`weight_norm` folded) | `116.14 MB` | `1.00x` | `14.69%` | `7.20%` | `0.00 dB` | — |
+| | `Q4_0` Linear (`4.5 bpw`) | `16.52 MB` | `7.03x` | `12.99%` | `7.56%` | `4.57 dB` | — |
+| | **`V3_P4_0` Prime LUT** | **`16.52 MB`** | **`7.03x`** | **`12.99%`** | **`7.20%`** | **`4.10 dB` (`-10.4%` vs `Q4_0`)** | — |
+| | `V3_Q2_0` (`2.25 bpw` PTQ) | `8.75 MB` | `13.27x` | `145.20%` *(gibberish)* | `107.56%` | `15.59 dB` | `0` |
+| | **`V3_Q2_0 + PRIMAL`** | **`8.75 MB`** | **`13.27x`** | **`23.73%` (`-121.5%`!)** | **`12.60%`** | **`6.20 dB` (`-9.4 dB`!)** | *Multi-Res STFT (`208s`)* |
+| **`F5-TTS v1 Base` (`337.1M`)**<br/>*`4x ConvNeXt V2` + `22L DiT` Flow-Matching (`24 kHz`)* | `FP32` Reference | `1,348.39 MB` | `1.00x` | `3.95%` | `3.69%` | `0.00 dB` | — |
+| | `Q4_0` Linear (`4.5 bpw`) | `191.99 MB` | `7.02x` | `3.95%` | `3.69%` | `4.69 dB` | — |
+| | **`V3_P4_0 + PRIMAL`** | **`191.99 MB`** | **`7.02x`** | **`4.52%`** | **`3.69%` (`0.0%` CER loss)** | `8.28 dB` | **`93,733` (`206s`)** |
+| | `V3_Q2_0` (`DiT` 2-bit PTQ) | `138.90 MB` | `9.71x` | `100.00%` *(dead static)* | `87.94%` | `16.66 dB` | `0` |
+| | **`V3_Q2_0 + PRIMAL`** | **`138.90 MB`** | **`9.71x`** | **`6.78%` (`-93.2%`!)** | **`4.68%`** | **`10.82 dB`** | **`164,654` (`252s`)** |
+
+---
+
 ## Citation & Commercial Licensing Contact
 - **Author:** Philip Bartsch (`@batteryphil` — https://github.com/batteryphil)
 - **Commercial 5% Profit-Share Registration / Enterprise Buyouts:** Open an issue titled `[Commercial 5% License Registration]` on this repository or contact `@batteryphil` via GitHub.

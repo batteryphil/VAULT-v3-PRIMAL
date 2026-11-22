@@ -1,0 +1,638 @@
+{
+  "eval_protocol": {
+    "n_eval_sentences": 12,
+    "n_calib_sentences": 24,
+    "train_test_overlap": 0,
+    "asr_judge": "openai/whisper-small.en"
+  },
+  "tiny_voca_4_5m": {
+    "architecture": "Micro-Transformer (RoPE) + Source-Filter Cepstral Synthesizer (24 kHz, Voices F2 & M2)",
+    "active_params": 4537291,
+    "fp32_baseline": {
+      "size_mb": 18.15,
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 0.0,
+      "stft_spectral_convergence": 0.0,
+      "audio_seconds": 61.15,
+      "wall_seconds": 13.94,
+      "x_realtime": 4.39,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "q4_0_ptq": {
+      "size": {
+        "format": "q4_0",
+        "active_params": 4537291,
+        "quantized_params": 4473984,
+        "quantized_share_pct": 98.6,
+        "fp32_mb": 18.15,
+        "packed_bytes": 2643230,
+        "packed_mb": 2.64,
+        "compression_vs_fp32_x": 6.87,
+        "effective_bpw": 4.66
+      },
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 2.66,
+      "stft_spectral_convergence": 0.7328,
+      "audio_seconds": 60.83,
+      "wall_seconds": 1.06,
+      "x_realtime": 57.25,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_p4_0_ptq": {
+      "size": {
+        "format": "p4_0",
+        "active_params": 4537291,
+        "quantized_params": 4473984,
+        "quantized_share_pct": 98.6,
+        "fp32_mb": 18.15,
+        "packed_bytes": 2643230,
+        "packed_mb": 2.64,
+        "compression_vs_fp32_x": 6.87,
+        "effective_bpw": 4.66
+      },
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 3.379,
+      "stft_spectral_convergence": 0.6984,
+      "audio_seconds": 61.13,
+      "wall_seconds": 0.54,
+      "x_realtime": 113.94,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_p4_0_primal": {
+      "size": {
+        "format": "p4_0",
+        "active_params": 4537291,
+        "quantized_params": 4473984,
+        "quantized_share_pct": 98.6,
+        "fp32_mb": 18.15,
+        "packed_bytes": 2643230,
+        "packed_mb": 2.64,
+        "compression_vs_fp32_x": 6.87,
+        "effective_bpw": 4.66
+      },
+      "primal": {
+        "steps": 80,
+        "total_discrete_flips": 208,
+        "final_ema_loss": 1.5845,
+        "distill_seconds": 36.3,
+        "logs": [
+          {
+            "step": 1,
+            "loss": 1.0876,
+            "ema_loss": 1.0876,
+            "flips": 0
+          },
+          {
+            "step": 20,
+            "loss": 1.4187,
+            "ema_loss": 1.4737,
+            "flips": 9
+          },
+          {
+            "step": 40,
+            "loss": 1.5985,
+            "ema_loss": 1.5854,
+            "flips": 1
+          },
+          {
+            "step": 60,
+            "loss": 1.6679,
+            "ema_loss": 1.6257,
+            "flips": 3
+          },
+          {
+            "step": 80,
+            "loss": 1.4371,
+            "ema_loss": 1.5845,
+            "flips": 1
+          }
+        ]
+      },
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 3.717,
+      "stft_spectral_convergence": 0.8093,
+      "audio_seconds": 61.3,
+      "wall_seconds": 1.03,
+      "x_realtime": 59.65,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_q2_0_ptq": {
+      "size": {
+        "format": "q2_0",
+        "active_params": 4537291,
+        "quantized_params": 4473984,
+        "quantized_share_pct": 98.6,
+        "fp32_mb": 18.15,
+        "packed_bytes": 1384922,
+        "packed_mb": 1.38,
+        "compression_vs_fp32_x": 13.1,
+        "effective_bpw": 2.442
+      },
+      "whisper_wer_pct": 5.08,
+      "whisper_cer_pct": 3.78,
+      "log_mel_distortion_db": 6.199,
+      "stft_spectral_convergence": 1.1735,
+      "audio_seconds": 61.85,
+      "wall_seconds": 1.2,
+      "x_realtime": 51.39,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_q2_0_primal": {
+      "size": {
+        "format": "q2_0",
+        "active_params": 4537291,
+        "quantized_params": 4473984,
+        "quantized_share_pct": 98.6,
+        "fp32_mb": 18.15,
+        "packed_bytes": 1384922,
+        "packed_mb": 1.38,
+        "compression_vs_fp32_x": 13.1,
+        "effective_bpw": 2.442
+      },
+      "primal": {
+        "steps": 120,
+        "total_discrete_flips": 706,
+        "final_ema_loss": 1.9396,
+        "distill_seconds": 26.98,
+        "logs": [
+          {
+            "step": 1,
+            "loss": 2.1566,
+            "ema_loss": 2.1566,
+            "flips": 0
+          },
+          {
+            "step": 20,
+            "loss": 2.036,
+            "ema_loss": 2.073,
+            "flips": 30
+          },
+          {
+            "step": 40,
+            "loss": 2.1962,
+            "ema_loss": 2.1302,
+            "flips": 11
+          },
+          {
+            "step": 60,
+            "loss": 2.0186,
+            "ema_loss": 2.1015,
+            "flips": 0
+          },
+          {
+            "step": 80,
+            "loss": 2.0145,
+            "ema_loss": 2.0736,
+            "flips": 1
+          },
+          {
+            "step": 100,
+            "loss": 2.0193,
+            "ema_loss": 1.9884,
+            "flips": 0
+          },
+          {
+            "step": 120,
+            "loss": 1.8797,
+            "ema_loss": 1.9396,
+            "flips": 0
+          }
+        ]
+      },
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 5.663,
+      "stft_spectral_convergence": 0.9948,
+      "audio_seconds": 61.13,
+      "wall_seconds": 1.1,
+      "x_realtime": 55.54,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    }
+  },
+  "vits_31m": {
+    "architecture": "1D CNN WaveNet Normalizing Flow + HiFi-GAN ConvTranspose1d Vocoder (facebook/mms-tts-eng, weight_norm folded)",
+    "active_params": 29035056,
+    "fp32_baseline": {
+      "size_mb": 116.14,
+      "whisper_wer_pct": 14.69,
+      "whisper_cer_pct": 7.2,
+      "log_mel_distortion_db": 0.0,
+      "stft_spectral_convergence": 0.0,
+      "audio_seconds": 76.19,
+      "wall_seconds": 196.71,
+      "x_realtime": 0.39,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "q4_0_ptq": {
+      "size": {
+        "format": "q4_0",
+        "active_params": 29035056,
+        "quantized_params": 28904960,
+        "quantized_share_pct": 99.55,
+        "fp32_mb": 116.14,
+        "packed_bytes": 16519232,
+        "packed_mb": 16.52,
+        "compression_vs_fp32_x": 7.03,
+        "effective_bpw": 4.552
+      },
+      "whisper_wer_pct": 12.99,
+      "whisper_cer_pct": 7.56,
+      "log_mel_distortion_db": 4.573,
+      "stft_spectral_convergence": 1.083,
+      "audio_seconds": 73.57,
+      "wall_seconds": 185.4,
+      "x_realtime": 0.4,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_p4_0_ptq": {
+      "size": {
+        "format": "p4_0",
+        "active_params": 29035056,
+        "quantized_params": 28904960,
+        "quantized_share_pct": 99.55,
+        "fp32_mb": 116.14,
+        "packed_bytes": 16519232,
+        "packed_mb": 16.52,
+        "compression_vs_fp32_x": 7.03,
+        "effective_bpw": 4.552
+      },
+      "whisper_wer_pct": 12.99,
+      "whisper_cer_pct": 7.2,
+      "log_mel_distortion_db": 4.097,
+      "stft_spectral_convergence": 1.0435,
+      "audio_seconds": 73.33,
+      "wall_seconds": 141.76,
+      "x_realtime": 0.52,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_p4_0_primal": {
+      "size": {
+        "format": "p4_0",
+        "active_params": 29035056,
+        "quantized_params": 28904960,
+        "quantized_share_pct": 99.55,
+        "fp32_mb": 116.14,
+        "packed_bytes": 16519232,
+        "packed_mb": 16.52,
+        "compression_vs_fp32_x": 7.03,
+        "effective_bpw": 4.552
+      },
+      "primal": {
+        "steps": 80,
+        "total_discrete_flips": 0,
+        "final_ema_loss": 1.7797,
+        "distill_seconds": 173.91,
+        "logs": [
+          {
+            "step": 1,
+            "loss": 1.4294,
+            "ema_loss": 1.4294,
+            "flips": 0
+          },
+          {
+            "step": 20,
+            "loss": 1.8206,
+            "ema_loss": 1.7194,
+            "flips": 0
+          },
+          {
+            "step": 40,
+            "loss": 1.8197,
+            "ema_loss": 1.8271,
+            "flips": 0
+          },
+          {
+            "step": 60,
+            "loss": 1.8041,
+            "ema_loss": 1.8777,
+            "flips": 0
+          },
+          {
+            "step": 80,
+            "loss": 1.6763,
+            "ema_loss": 1.7797,
+            "flips": 0
+          }
+        ]
+      },
+      "whisper_wer_pct": 14.12,
+      "whisper_cer_pct": 9.0,
+      "log_mel_distortion_db": 5.195,
+      "stft_spectral_convergence": 0.9997,
+      "audio_seconds": 76.21,
+      "wall_seconds": 160.85,
+      "x_realtime": 0.47,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_q2_0_ptq": {
+      "size": {
+        "format": "q2_0",
+        "active_params": 29035056,
+        "quantized_params": 27643904,
+        "quantized_share_pct": 95.21,
+        "fp32_mb": 116.14,
+        "packed_bytes": 8754752,
+        "packed_mb": 8.75,
+        "compression_vs_fp32_x": 13.27,
+        "effective_bpw": 2.412
+      },
+      "whisper_wer_pct": 145.2,
+      "whisper_cer_pct": 107.56,
+      "log_mel_distortion_db": 15.594,
+      "stft_spectral_convergence": 0.9771,
+      "audio_seconds": 52.75,
+      "wall_seconds": 117.04,
+      "x_realtime": 0.45,
+      "sample_transcript_0": "this is a phonic space pondering thing and then start rolling with the new hosover corridor"
+    },
+    "v3_q2_0_primal": {
+      "size": {
+        "format": "q2_0",
+        "active_params": 29035056,
+        "quantized_params": 27643904,
+        "quantized_share_pct": 95.21,
+        "fp32_mb": 116.14,
+        "packed_bytes": 8754752,
+        "packed_mb": 8.75,
+        "compression_vs_fp32_x": 13.27,
+        "effective_bpw": 2.412
+      },
+      "primal": {
+        "steps": 120,
+        "total_discrete_flips": 1,
+        "final_ema_loss": 1.8802,
+        "distill_seconds": 208.06,
+        "logs": [
+          {
+            "step": 1,
+            "loss": 3.2014,
+            "ema_loss": 3.2014,
+            "flips": 0
+          },
+          {
+            "step": 20,
+            "loss": 2.2462,
+            "ema_loss": 2.4827,
+            "flips": 0
+          },
+          {
+            "step": 40,
+            "loss": 2.3168,
+            "ema_loss": 2.2225,
+            "flips": 0
+          },
+          {
+            "step": 60,
+            "loss": 2.2198,
+            "ema_loss": 2.1706,
+            "flips": 0
+          },
+          {
+            "step": 80,
+            "loss": 2.02,
+            "ema_loss": 2.0524,
+            "flips": 0
+          },
+          {
+            "step": 100,
+            "loss": 1.8041,
+            "ema_loss": 1.9823,
+            "flips": 0
+          },
+          {
+            "step": 120,
+            "loss": 1.7703,
+            "ema_loss": 1.8802,
+            "flips": 0
+          }
+        ]
+      },
+      "whisper_wer_pct": 23.73,
+      "whisper_cer_pct": 12.6,
+      "log_mel_distortion_db": 6.199,
+      "stft_spectral_convergence": 0.9594,
+      "audio_seconds": 74.16,
+      "wall_seconds": 133.66,
+      "x_realtime": 0.55,
+      "sample_transcript_0": "and this is a full text to speech quad ess asian benchmark running locally on consumer hardware"
+    }
+  },
+  "f5_tts_335m": {
+    "architecture": "4x ConvNeXt V2 CNN + 22-Layer DiT (adaLN-Zero) Conditional Flow-Matching Diffusion + Vocos (24 kHz)",
+    "active_params": 337096804,
+    "fp32_baseline": {
+      "size_mb": 1348.39,
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 0.0,
+      "stft_spectral_convergence": 0.0,
+      "audio_seconds": 117.43,
+      "wall_seconds": 181.62,
+      "x_realtime": 0.65,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "q4_0_ptq": {
+      "size": {
+        "format": "q4_0",
+        "active_params": 337096804,
+        "quantized_params": 335458304,
+        "quantized_share_pct": 99.51,
+        "fp32_mb": 1348.39,
+        "packed_bytes": 191986120,
+        "packed_mb": 191.99,
+        "compression_vs_fp32_x": 7.02,
+        "effective_bpw": 4.556
+      },
+      "whisper_wer_pct": 3.95,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 4.694,
+      "stft_spectral_convergence": 0.5572,
+      "audio_seconds": 117.43,
+      "wall_seconds": 179.97,
+      "x_realtime": 0.65,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_p4_0_ptq": {
+      "size": {
+        "format": "p4_0",
+        "active_params": 337096804,
+        "quantized_params": 335458304,
+        "quantized_share_pct": 99.51,
+        "fp32_mb": 1348.39,
+        "packed_bytes": 191986120,
+        "packed_mb": 191.99,
+        "compression_vs_fp32_x": 7.02,
+        "effective_bpw": 4.556
+      },
+      "whisper_wer_pct": 4.52,
+      "whisper_cer_pct": 3.87,
+      "log_mel_distortion_db": 6.094,
+      "stft_spectral_convergence": 0.6514,
+      "audio_seconds": 117.43,
+      "wall_seconds": 180.18,
+      "x_realtime": 0.65,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_p4_0_primal": {
+      "size": {
+        "format": "p4_0",
+        "active_params": 337096804,
+        "quantized_params": 335458304,
+        "quantized_share_pct": 99.51,
+        "fp32_mb": 1348.39,
+        "packed_bytes": 191986120,
+        "packed_mb": 191.99,
+        "compression_vs_fp32_x": 7.02,
+        "effective_bpw": 4.556
+      },
+      "primal": {
+        "steps": 90,
+        "total_discrete_flips": 93733,
+        "final_ema_loss": 0.324,
+        "distill_seconds": 205.54,
+        "logs": [
+          {
+            "step": 1,
+            "loss": 0.4478,
+            "ema_loss": 0.4478,
+            "flips": 0
+          },
+          {
+            "step": 20,
+            "loss": 0.3382,
+            "ema_loss": 0.5475,
+            "flips": 1017
+          },
+          {
+            "step": 40,
+            "loss": 0.4122,
+            "ema_loss": 0.4369,
+            "flips": 1332
+          },
+          {
+            "step": 60,
+            "loss": 0.3308,
+            "ema_loss": 0.4011,
+            "flips": 1217
+          },
+          {
+            "step": 80,
+            "loss": 0.1934,
+            "ema_loss": 0.3581,
+            "flips": 969
+          },
+          {
+            "step": 90,
+            "loss": 0.306,
+            "ema_loss": 0.324,
+            "flips": 965
+          }
+        ]
+      },
+      "whisper_wer_pct": 4.52,
+      "whisper_cer_pct": 3.69,
+      "log_mel_distortion_db": 8.278,
+      "stft_spectral_convergence": 0.8443,
+      "audio_seconds": 117.43,
+      "wall_seconds": 180.42,
+      "x_realtime": 0.65,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    },
+    "v3_q2_0_ptq": {
+      "size": {
+        "format": "q2_0",
+        "active_params": 337096804,
+        "quantized_params": 188743680,
+        "quantized_share_pct": 55.99,
+        "fp32_mb": 1348.39,
+        "packed_bytes": 138901960,
+        "packed_mb": 138.9,
+        "compression_vs_fp32_x": 9.71,
+        "effective_bpw": 3.296
+      },
+      "whisper_wer_pct": 100.0,
+      "whisper_cer_pct": 87.94,
+      "log_mel_distortion_db": 16.657,
+      "stft_spectral_convergence": 0.9326,
+      "audio_seconds": 117.43,
+      "wall_seconds": 179.73,
+      "x_realtime": 0.65,
+      "sample_transcript_0": "i m sorry"
+    },
+    "v3_q2_0_primal": {
+      "size": {
+        "format": "q2_0",
+        "active_params": 337096804,
+        "quantized_params": 188743680,
+        "quantized_share_pct": 55.99,
+        "fp32_mb": 1348.39,
+        "packed_bytes": 138901960,
+        "packed_mb": 138.9,
+        "compression_vs_fp32_x": 9.71,
+        "effective_bpw": 3.296
+      },
+      "primal": {
+        "steps": 120,
+        "total_discrete_flips": 164654,
+        "final_ema_loss": 0.4556,
+        "distill_seconds": 251.77,
+        "logs": [
+          {
+            "step": 1,
+            "loss": 2.1284,
+            "ema_loss": 2.1284,
+            "flips": 0
+          },
+          {
+            "step": 20,
+            "loss": 0.5026,
+            "ema_loss": 0.8586,
+            "flips": 1078
+          },
+          {
+            "step": 40,
+            "loss": 0.7045,
+            "ema_loss": 0.6896,
+            "flips": 2346
+          },
+          {
+            "step": 60,
+            "loss": 0.7116,
+            "ema_loss": 0.6145,
+            "flips": 2018
+          },
+          {
+            "step": 80,
+            "loss": 0.3552,
+            "ema_loss": 0.5538,
+            "flips": 1246
+          },
+          {
+            "step": 100,
+            "loss": 0.6647,
+            "ema_loss": 0.523,
+            "flips": 987
+          },
+          {
+            "step": 120,
+            "loss": 0.506,
+            "ema_loss": 0.4556,
+            "flips": 917
+          }
+        ]
+      },
+      "whisper_wer_pct": 6.78,
+      "whisper_cer_pct": 4.68,
+      "log_mel_distortion_db": 10.819,
+      "stft_spectral_convergence": 0.966,
+      "audio_seconds": 117.43,
+      "wall_seconds": 179.83,
+      "x_realtime": 0.65,
+      "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+    }
+  }
+}
