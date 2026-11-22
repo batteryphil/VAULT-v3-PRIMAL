@@ -48,7 +48,7 @@ enum {
     V3_E_NAN = -12       /* non-finite (NaN / Inf) weight or scale detected */
 };
 
-enum { V3_F32 = 0, V3_F16 = 1, V3_BF16 = 2, V3_Q8_0 = 8, V3_Q4_0 = 9, V3_P4_0 = 10 };
+enum { V3_F32 = 0, V3_F16 = 1, V3_BF16 = 2, V3_Q8_0 = 8, V3_Q4_0 = 9, V3_P4_0 = 10, V3_T1_58_G32 = 11, V3_T1_58_G64 = 12 };
 
 typedef struct {
     const uint8_t *data;

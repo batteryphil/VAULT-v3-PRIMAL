@@ -145,6 +145,9 @@ All integers and floats in `VLT3` are **little-endian**. Every major section (`t
    g_p4_lut[16] = { -127, -101, -80, -62, -46, -33, -21, -10, 0, 10, 21, 33, 46, 62, 80, 101 };
    ```
    Reconstruction is $\hat{w}_i = d \cdot \mathrm{g\_p4\_lut}[q_i]$ directly with zero runtime division (signed `fp16` scale $d$ already absorbs the $1/127$ factor and aligns `-127` with each block's largest signed outlier). On `x86_64` AVX2, all 16 LUT bytes fit in a single `__m128i` register and decode 16 nibbles per instruction in **1 cycle** via `_mm_shuffle_epi8` (`VPSHUFB`).
+4. **Base-3 Ternary `1.58-Bit` `V3_T1_58_G32` (`dtype = 11`, `9` bytes / `32` weights = `2.250 bits/weight` w/ scale) & `V3_T1_58_G64` (`dtype = 12`, `15` bytes / `64` weights = `1.875 bits/weight` w/ scale):**
+   - Each block packs an unsigned `float16` scale $d$ (`2` bytes) followed by base-3 packed trits (`5` trits per byte, $3^5 = 243 \le 256$: $u_k = q_k + 1 \in \{0, 1, 2\}$ for $q_k \in \{-1, 0, +1\}$, $b = u_0 + 3u_1 + 9u_2 + 27u_3 + 81u_4$, `7` bytes for `G=32` or `13` bytes for `G=64`).
+   - **Zero-Multiply IEEE-754 Bitwise SIMD (`runtime/vault3.c`):** Packed base-3 bytes unpack directly into `64`-bit integer registers via `g_trit5_u64[256]` (`0` stack stores, `0` branches) and accumulate $\sum_j q_j x_j$ on `AVX2` (`avx2_ternary8_term`) and `ARM64 NEON` (`neon_ternary8_f32`) using **pure IEEE-754 sign-bit `XOR`, zero-mask `ANDNOT`/`BIC`, and `ADD`** — **zero `int->float` conversions and zero floating-point multiplies inside the inner loop**, followed by one block-scale `FMA` per `32` or `64` weights.
 
 Export command (`tools/export_vlt3.py`):
 ```bash

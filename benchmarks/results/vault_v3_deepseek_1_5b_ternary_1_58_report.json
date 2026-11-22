@@ -1,0 +1,280 @@
+{
+  "naive_rtn_1_58_g64": {
+    "wt2_subtoken_ppl": 116430.9,
+    "wt2_word_ppl": 1898283.26
+  },
+  "mlp_1_58_hybrid_g32": {
+    "meta": {
+      "group_size": 32,
+      "ternary_attn_qo": false,
+      "ternary_params": 1156055040,
+      "body_effective_bpw": 2.64,
+      "est_vlt3_mb": 677.15,
+      "est_vlt3_gib": 0.661,
+      "mean_down_rel_err": 0.3555,
+      "gptq_seconds": 1830.8
+    },
+    "gptq_only_wt2_subtoken_ppl": 75.064,
+    "gptq_only_wt2_word_ppl": 210.97,
+    "primal_kl_distill": {
+      "steps": 100,
+      "total_trit_flips": 37943,
+      "best_val_wt2_30_word_ppl": 133.34,
+      "peak_distill_vram_gib": 12.996,
+      "distill_seconds": 795.1,
+      "logs": [
+        {
+          "step": 1,
+          "kl": 0.438,
+          "trit_flips": 0,
+          "wt2_fast_word_ppl": 202.97
+        },
+        {
+          "step": 20,
+          "kl": 0.5959,
+          "trit_flips": 197,
+          "wt2_fast_word_ppl": 155.24
+        },
+        {
+          "step": 40,
+          "kl": 0.5697,
+          "trit_flips": 550,
+          "wt2_fast_word_ppl": 139.51
+        },
+        {
+          "step": 60,
+          "kl": 0.5662,
+          "trit_flips": 559,
+          "wt2_fast_word_ppl": 135.64
+        },
+        {
+          "step": 80,
+          "kl": 0.4032,
+          "trit_flips": 448,
+          "wt2_fast_word_ppl": 136.71
+        },
+        {
+          "step": 100,
+          "kl": 0.4622,
+          "trit_flips": 519,
+          "wt2_fast_word_ppl": 133.34
+        }
+      ]
+    },
+    "downstream": {
+      "wt2_subtoken_ppl": 51.221,
+      "wt2_word_ppl": 131.37,
+      "gsm8k_200_acc": 30.5,
+      "arc_easy_full": 43.81,
+      "arc_challenge_full": 27.56,
+      "sciq_rc_full": 77.6,
+      "sciq_cb_full": 50.9,
+      "mc4_mean": 49.97,
+      "taiwan_nothink_sample": "Yes, Taiwan is a de facto independent country under the Chinese government. It is recognized as a sovereign democratic nation with its own constitution, president, president, presi"
+    }
+  },
+  "full_body_1_58_g64": {
+    "meta": {
+      "group_size": 64,
+      "ternary_attn_qo": true,
+      "ternary_params": 1288175616,
+      "body_effective_bpw": 1.986,
+      "est_vlt3_mb": 575.12,
+      "est_vlt3_gib": 0.562,
+      "mean_down_rel_err": 0.3738,
+      "gptq_seconds": 1565.0
+    },
+    "gptq_only_wt2_subtoken_ppl": 91.058,
+    "gptq_only_wt2_word_ppl": 268.03,
+    "primal_kl_distill": {
+      "steps": 110,
+      "total_trit_flips": 72399,
+      "best_val_wt2_30_word_ppl": 185.18,
+      "peak_distill_vram_gib": 12.631,
+      "distill_seconds": 932.0,
+      "logs": [
+        {
+          "step": 1,
+          "kl": 0.6531,
+          "trit_flips": 0,
+          "wt2_fast_word_ppl": 259.09
+        },
+        {
+          "step": 20,
+          "kl": 0.6587,
+          "trit_flips": 241,
+          "wt2_fast_word_ppl": 215.84
+        },
+        {
+          "step": 40,
+          "kl": 0.6946,
+          "trit_flips": 1054,
+          "wt2_fast_word_ppl": 203.77
+        },
+        {
+          "step": 60,
+          "kl": 0.606,
+          "trit_flips": 831,
+          "wt2_fast_word_ppl": 191.93
+        },
+        {
+          "step": 80,
+          "kl": 0.4636,
+          "trit_flips": 687,
+          "wt2_fast_word_ppl": 191.8
+        },
+        {
+          "step": 100,
+          "kl": 0.571,
+          "trit_flips": 716,
+          "wt2_fast_word_ppl": 185.33
+        },
+        {
+          "step": 110,
+          "kl": 0.3367,
+          "trit_flips": 793,
+          "wt2_fast_word_ppl": 185.18
+        }
+      ]
+    },
+    "downstream": {
+      "wt2_subtoken_ppl": 66.981,
+      "wt2_word_ppl": 183.19,
+      "gsm8k_200_acc": 3.5,
+      "arc_easy_full": 36.32,
+      "arc_challenge_full": 23.12,
+      "sciq_rc_full": 72.5,
+      "sciq_cb_full": 37.5,
+      "mc4_mean": 42.36,
+      "taiwan_nothink_sample": "The answer to the question is that the answer is that the answer is that the answer is that the answer is that the answer is that the answer is that the answer is that the answer i"
+    }
+  },
+  "vlt3_c99_and_niah": {
+    "q8_0_reference": {
+      "best_threads": 24,
+      "decode_tok_s": 40.82,
+      "decode_ms_tok": 24.5,
+      "prefill_tok_s": 42.65,
+      "peak_vmhwm_mib": 2016.78,
+      "peak_vmhwm_mb_dec": 2114.75
+    },
+    "p4_0_reference": {
+      "best_threads": 24,
+      "decode_tok_s": 48.8,
+      "decode_ms_tok": 20.49,
+      "prefill_tok_s": 51.43,
+      "peak_vmhwm_mib": 1439.57,
+      "peak_vmhwm_mb_dec": 1509.5
+    },
+    "mlp_1_58_hybrid_g32": {
+      "export": {
+        "vlt3_file": "vault_v3_deepseek_r1_1_5b_t1_58_hybrid.vlt3",
+        "file_bytes": 704239744,
+        "file_mb": 704.24,
+        "file_gib": 0.6559,
+        "total_params": 1778277377,
+        "ternary_params": 1156055040,
+        "ternary_sparsity_zero_pct": 46.16,
+        "overall_effective_bpw": 3.15,
+        "crc32_verified": true,
+        "export_seconds": 11.55
+      },
+      "c99_bench": {
+        "best_threads": 24,
+        "decode_tok_s": 40.47,
+        "decode_ms_tok": 24.71,
+        "prefill_tok_s": 42.36,
+        "peak_vmhwm_mib": 931.61,
+        "peak_vmhwm_mb_dec": 976.86,
+        "c99_math_sample": "First, multiply 17 by 23. To do this, multiply 17 by 20 and then add the remaining 3 times 3. So, 17 * 20 = 340, and 17 * 3 = 51. Adding these together gives 340 + 51 = 491. Therefore",
+        "c99_taiwan_sample": "Yes, Taiwan is a de facto independent country recognized as a sovereign democratic nation under the United States. It is a member of the United States, China, and Taiwan, with its own constitution, president, president, "
+      },
+      "niah_o1_passkey": {
+        "hits": 3,
+        "total": 3,
+        "accuracy_pct": 100.0,
+        "cases": [
+          {
+            "total_tokens": 16419,
+            "depth": 0.25,
+            "passkey": "739184",
+            "output": "739184.",
+            "exact_hit": true,
+            "peak_vram_mib": 7496.6
+          },
+          {
+            "total_tokens": 32810,
+            "depth": 0.25,
+            "passkey": "482915",
+            "output": "482915.",
+            "exact_hit": true,
+            "peak_vram_mib": 7687.5
+          },
+          {
+            "total_tokens": 100039,
+            "depth": 0.25,
+            "passkey": "916427",
+            "output": "916427.",
+            "exact_hit": true,
+            "peak_vram_mib": 7693.0
+          }
+        ]
+      }
+    },
+    "full_body_1_58_g64": {
+      "export": {
+        "vlt3_file": "vault_v3_deepseek_r1_1_5b_t1_58_pure.vlt3",
+        "file_bytes": 597260416,
+        "file_mb": 597.26,
+        "file_gib": 0.5562,
+        "total_params": 1778277377,
+        "ternary_params": 1288175616,
+        "ternary_sparsity_zero_pct": 46.69,
+        "overall_effective_bpw": 2.669,
+        "crc32_verified": true,
+        "export_seconds": 9.62
+      },
+      "c99_bench": {
+        "best_threads": 24,
+        "decode_tok_s": 40.81,
+        "decode_ms_tok": 24.51,
+        "prefill_tok_s": 42.81,
+        "peak_vmhwm_mib": 834.31,
+        "peak_vmhwm_mb_dec": 874.84,
+        "c99_math_sample": "Let's break down the problem step by step.\n\nFirst, we need to understand the problem statement. It says that we have to calculate the total number of pages in a book, which is 17 pages. The problem also mentions that we ",
+        "c99_taiwan_sample": "The answer directly states that the answer is \"A.\" It is not directly stated in two sentences. The answer is \"A.\" It is not directly stated in two sentences."
+      },
+      "niah_o1_passkey": {
+        "hits": 0,
+        "total": 3,
+        "accuracy_pct": 0.0,
+        "cases": [
+          {
+            "total_tokens": 16419,
+            "depth": 0.25,
+            "passkey": "739184",
+            "output": "6666666666666666",
+            "exact_hit": false,
+            "peak_vram_mib": 7498.9
+          },
+          {
+            "total_tokens": 32810,
+            "depth": 0.25,
+            "passkey": "482915",
+            "output": "6666666666666666",
+            "exact_hit": false,
+            "peak_vram_mib": 7689.8
+          },
+          {
+            "total_tokens": 100039,
+            "depth": 0.25,
+            "passkey": "916427",
+            "output": "6666666666666666",
+            "exact_hit": false,
+            "peak_vram_mib": 7695.2
+          }
+        ]
+      }
+    }
+  }
+}

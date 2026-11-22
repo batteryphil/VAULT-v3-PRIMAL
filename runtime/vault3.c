@@ -47,6 +47,8 @@ static int is_finite_bf16_bits(uint16_t b) { return (b & 0x7F80u) != 0x7F80u; }
  * ========================================================================== */
 static uint32_t g_crc_table[256];
 static float g_f16[65536];
+static int8_t g_trit5[256][8];
+static uint64_t g_trit5_u64[256];
 static int g_tables_ready = 0;
 
 static float f16_to_f32_slow(uint16_t h) {
@@ -74,6 +76,16 @@ static void init_tables(void) {
         uint32_t c = i;
         for (int k = 0; k < 8; k++) c = (c & 1u) ? (0xEDB88320u ^ (c >> 1)) : (c >> 1);
         g_crc_table[i] = c;
+        uint32_t v = (i < 243u) ? i : 121u; /* 121 = 1+3+9+27+81 -> all 5 trits == 0 */
+        uint64_t pk = 0;
+        for (int k = 0; k < 5; k++) {
+            int8_t tv = (int8_t)((int)(v % 3u) - 1);
+            g_trit5[i][k] = tv;
+            pk |= ((uint64_t)(uint8_t)tv) << (8 * k);
+            v /= 3u;
+        }
+        g_trit5[i][5] = 0; g_trit5[i][6] = 0; g_trit5[i][7] = 0;
+        g_trit5_u64[i] = pk;
     }
     for (uint32_t i = 0; i < 65536; i++)
         g_f16[i] = is_finite_f16_bits((uint16_t)i) ? f16_to_f32_slow((uint16_t)i) : 0.0f;
@@ -195,6 +207,16 @@ static uint64_t dtype_nbytes(uint32_t dt, uint64_t n, int *ok) {
         if ((n % QK) != 0 || blks > (~0ull) / 18ull) { *ok = 0; return 0; }
         return blks * 18ull;
     }
+    case V3_T1_58_G32: {
+        uint64_t blks = n / QK;
+        if ((n % QK) != 0 || blks > (~0ull) / 9ull) { *ok = 0; return 0; }
+        return blks * 9ull;
+    }
+    case V3_T1_58_G64: {
+        uint64_t blks = n / 64ull;
+        if ((n % 64ull) != 0 || blks > (~0ull) / 15ull) { *ok = 0; return 0; }
+        return blks * 15ull;
+    }
     default:
         *ok = 0;
         return 0;
@@ -216,7 +238,8 @@ static int expect_shape(const v3_tensor *t, uint32_t ndim, uint64_t d0, uint64_t
 static int is_f32(const v3_tensor *t) { return t->dtype == V3_F32; }
 static int is_matmul_dtype(const v3_tensor *t) {
     return t->dtype == V3_F32 || t->dtype == V3_F16 || t->dtype == V3_BF16 ||
-           t->dtype == V3_Q8_0 || t->dtype == V3_Q4_0 || t->dtype == V3_P4_0;
+           t->dtype == V3_Q8_0 || t->dtype == V3_Q4_0 || t->dtype == V3_P4_0 ||
+           t->dtype == V3_T1_58_G32 || t->dtype == V3_T1_58_G64;
 }
 
 static int check_tensor_finite(const uint8_t *p, uint32_t dt, uint64_t n, int full_scan) {
@@ -266,11 +289,18 @@ static int check_tensor_finite(const uint8_t *p, uint32_t dt, uint64_t n, int fu
     }
     case V3_Q8_0:
     case V3_Q4_0:
-    case V3_P4_0: {
+    case V3_P4_0:
+    case V3_T1_58_G32: {
         uint64_t blks = n / QK;
-        uint64_t stride = (dt == V3_Q8_0) ? 34ull : 18ull;
+        uint64_t stride = (dt == V3_Q8_0) ? 34ull : ((dt == V3_T1_58_G32) ? 9ull : 18ull);
         for (uint64_t b = 0; b < blks; b++)
             if (!is_finite_f16_bits(rd16(p + b * stride))) return 0;
+        return 1;
+    }
+    case V3_T1_58_G64: {
+        uint64_t blks = n / 64ull;
+        for (uint64_t b = 0; b < blks; b++)
+            if (!is_finite_f16_bits(rd16(p + b * 15ull))) return 0;
         return 1;
     }
     default:
@@ -363,7 +393,8 @@ int v3_load(v3_model *m, const uint8_t *buf, uint64_t size, int verify_crc) {
         int ok;
         uint64_t want = dtype_nbytes(dt, n, &ok);
         if (!ok) return V3_E_DTYPE;
-        if ((dt == V3_Q8_0 || dt == V3_Q4_0 || dt == V3_P4_0) && (dims[ndim - 1] % QK != 0)) return V3_E_SHAPE;
+        if ((dt == V3_Q8_0 || dt == V3_Q4_0 || dt == V3_P4_0 || dt == V3_T1_58_G32) && (dims[ndim - 1] % QK != 0)) return V3_E_SHAPE;
+        if (dt == V3_T1_58_G64 && (dims[ndim - 1] % 64u != 0)) return V3_E_SHAPE;
         if (want != nb) return V3_E_SHAPE;
         if (off % FILE_ALIGN || off < data_off || nb > data_off + data_size - off) return V3_E_BOUNDS;
         if (off < prev_end) return V3_E_BOUNDS;
@@ -482,6 +513,13 @@ static float hsum256(__m256 v) {
     s = _mm_add_ss(s, _mm_shuffle_ps(s, s, 1));
     return _mm_cvtss_f32(s);
 }
+
+static inline __m256 avx2_t16_fma(uint64_t w_lo, uint64_t w_hi, const float *xb) {
+    __m128i q16 = _mm_set_epi64x((long long)w_hi, (long long)w_lo);
+    __m256 q0 = _mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(q16));
+    __m256 q1 = _mm256_cvtepi32_ps(_mm256_cvtepi8_epi32(_mm_srli_si128(q16, 8)));
+    return V3_FMADD(q1, _mm256_loadu_ps(xb + 8), _mm256_mul_ps(q0, _mm256_loadu_ps(xb + 0)));
+}
 #elif defined(V3_USE_NEON)
 #if defined(__aarch64__) || defined(__ARM_FEATURE_FMA)
 #define V3_NEON_FMADD(sum, a, b) vfmaq_f32((sum), (a), (b))
@@ -511,6 +549,20 @@ static float32x4_t neon_block16_s8_f32(int8x16_t q16, const float *xb) {
     s1 = V3_NEON_FMADD(s1, q3, vld1q_f32(xb + 12));
     return vaddq_f32(s0, s1);
 }
+
+#ifdef __aarch64__
+static inline float32x4_t neon_ternary8_f32(uint64_t w8, const float *xb) {
+    int16x8_t q16 = vmovl_s8(vcreate_s8(w8));
+    int32x4_t qi0 = vmovl_s16(vget_low_s16(q16));
+    int32x4_t qi1 = vmovl_s16(vget_high_s16(q16));
+    const uint32x4_t sbit = vdupq_n_u32(0x80000000u);
+    uint32x4_t xs0 = veorq_u32(vreinterpretq_u32_f32(vld1q_f32(xb + 0)), vandq_u32(vreinterpretq_u32_s32(qi0), sbit));
+    uint32x4_t xs1 = veorq_u32(vreinterpretq_u32_f32(vld1q_f32(xb + 4)), vandq_u32(vreinterpretq_u32_s32(qi1), sbit));
+    float32x4_t t0 = vreinterpretq_f32_u32(vbicq_u32(xs0, vceqzq_s32(qi0)));
+    float32x4_t t1 = vreinterpretq_f32_u32(vbicq_u32(xs1, vceqzq_s32(qi1)));
+    return vaddq_f32(t0, t1);
+}
+#endif
 #endif
 
 static float dot_f32(const float *a, const float *b, uint32_t n) {
@@ -742,6 +794,125 @@ static float row_dot(const v3_tensor *w, uint32_t r, const float *x, uint32_t co
 #endif
         break;
     }
+    case V3_T1_58_G32: {
+        const uint8_t *p = w->data + (uint64_t)r * (cols / QK) * 9u;
+#if defined(__AVX2__) && (defined(__x86_64__) || defined(_M_X64))
+        __m256 sum = _mm256_setzero_ps();
+        for (uint32_t b = 0; b < cols / QK; b++, p += 9) {
+            const float *xb = x + b * QK;
+            uint64_t t0 = g_trit5_u64[p[2]], t1 = g_trit5_u64[p[3]], t2 = g_trit5_u64[p[4]],
+                     t3 = g_trit5_u64[p[5]], t4 = g_trit5_u64[p[6]], t5 = g_trit5_u64[p[7]], t6 = g_trit5_u64[p[8]];
+            uint64_t w0 = t0 | (t1 << 40);
+            uint64_t w1 = (t1 >> 24) | (t2 << 16) | (t3 << 56);
+            uint64_t w2 = (t3 >> 8) | (t4 << 32);
+            uint64_t w3 = (t4 >> 32) | (t5 << 8) | (t6 << 48);
+            __m256 bs = _mm256_add_ps(avx2_t16_fma(w0, w1, xb + 0), avx2_t16_fma(w2, w3, xb + 16));
+            sum = V3_FMADD(_mm256_set1_ps(g_f16[rd16(p)]), bs, sum);
+        }
+        acc = hsum256(sum);
+#elif defined(V3_USE_NEON) && defined(__aarch64__)
+        float32x4_t sum = vdupq_n_f32(0.0f);
+        for (uint32_t b = 0; b < cols / QK; b++, p += 9) {
+            const float *xb = x + b * QK;
+            uint64_t t0 = g_trit5_u64[p[2]], t1 = g_trit5_u64[p[3]], t2 = g_trit5_u64[p[4]],
+                     t3 = g_trit5_u64[p[5]], t4 = g_trit5_u64[p[6]], t5 = g_trit5_u64[p[7]], t6 = g_trit5_u64[p[8]];
+            uint64_t w0 = t0 | (t1 << 40);
+            uint64_t w1 = (t1 >> 24) | (t2 << 16) | (t3 << 56);
+            uint64_t w2 = (t3 >> 8) | (t4 << 32);
+            uint64_t w3 = (t4 >> 32) | (t5 << 8) | (t6 << 48);
+            float32x4_t bs = vaddq_f32(neon_ternary8_f32(w0, xb + 0), neon_ternary8_f32(w1, xb + 8));
+            bs = vaddq_f32(bs, vaddq_f32(neon_ternary8_f32(w2, xb + 16), neon_ternary8_f32(w3, xb + 24)));
+            sum = V3_NEON_FMADD(sum, vdupq_n_f32(g_f16[rd16(p)]), bs);
+        }
+        acc = hsum_neon(sum);
+#else
+        (void)g_trit5_u64;
+        for (uint32_t b = 0; b < cols / QK; b++, p += 9) {
+            const float *xb = x + b * QK;
+            float s = 0.0f;
+            for (uint32_t m = 0; m < 6; m++) {
+                const int8_t *tv = g_trit5[p[2 + m]];
+                for (uint32_t k = 0; k < 5; k++) {
+                    float xv = xb[5 * m + k];
+                    s += tv[k] > 0 ? xv : (tv[k] < 0 ? -xv : 0.0f);
+                }
+            }
+            const int8_t *tv6 = g_trit5[p[8]];
+            s += tv6[0] > 0 ? xb[30] : (tv6[0] < 0 ? -xb[30] : 0.0f);
+            s += tv6[1] > 0 ? xb[31] : (tv6[1] < 0 ? -xb[31] : 0.0f);
+            acc += g_f16[rd16(p)] * s;
+        }
+#endif
+        break;
+    }
+    case V3_T1_58_G64: {
+        const uint8_t *p = w->data + (uint64_t)r * (cols / 64u) * 15u;
+#if defined(__AVX2__) && (defined(__x86_64__) || defined(_M_X64))
+        __m256 sum = _mm256_setzero_ps();
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 15) {
+            const float *xb = x + b * 64u;
+            uint64_t t0 = g_trit5_u64[p[2]], t1 = g_trit5_u64[p[3]], t2 = g_trit5_u64[p[4]],
+                     t3 = g_trit5_u64[p[5]], t4 = g_trit5_u64[p[6]], t5 = g_trit5_u64[p[7]],
+                     t6 = g_trit5_u64[p[8]], t7 = g_trit5_u64[p[9]], t8 = g_trit5_u64[p[10]],
+                     t9 = g_trit5_u64[p[11]], t10 = g_trit5_u64[p[12]], t11 = g_trit5_u64[p[13]], t12 = g_trit5_u64[p[14]];
+            uint64_t w0 = t0 | (t1 << 40);
+            uint64_t w1 = (t1 >> 24) | (t2 << 16) | (t3 << 56);
+            uint64_t w2 = (t3 >> 8) | (t4 << 32);
+            uint64_t w3 = (t4 >> 32) | (t5 << 8) | (t6 << 48);
+            uint64_t w4 = (t6 >> 16) | (t7 << 24);
+            uint64_t w5 = t8 | (t9 << 40);
+            uint64_t w6 = (t9 >> 24) | (t10 << 16) | (t11 << 56);
+            uint64_t w7 = (t11 >> 8) | (t12 << 32);
+            __m256 bs0 = _mm256_add_ps(avx2_t16_fma(w0, w1, xb + 0), avx2_t16_fma(w2, w3, xb + 16));
+            __m256 bs1 = _mm256_add_ps(avx2_t16_fma(w4, w5, xb + 32), avx2_t16_fma(w6, w7, xb + 48));
+            sum = V3_FMADD(_mm256_set1_ps(g_f16[rd16(p)]), _mm256_add_ps(bs0, bs1), sum);
+        }
+        acc = hsum256(sum);
+#elif defined(V3_USE_NEON) && defined(__aarch64__)
+        float32x4_t sum = vdupq_n_f32(0.0f);
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 15) {
+            const float *xb = x + b * 64u;
+            uint64_t t0 = g_trit5_u64[p[2]], t1 = g_trit5_u64[p[3]], t2 = g_trit5_u64[p[4]],
+                     t3 = g_trit5_u64[p[5]], t4 = g_trit5_u64[p[6]], t5 = g_trit5_u64[p[7]],
+                     t6 = g_trit5_u64[p[8]], t7 = g_trit5_u64[p[9]], t8 = g_trit5_u64[p[10]],
+                     t9 = g_trit5_u64[p[11]], t10 = g_trit5_u64[p[12]], t11 = g_trit5_u64[p[13]], t12 = g_trit5_u64[p[14]];
+            uint64_t w0 = t0 | (t1 << 40);
+            uint64_t w1 = (t1 >> 24) | (t2 << 16) | (t3 << 56);
+            uint64_t w2 = (t3 >> 8) | (t4 << 32);
+            uint64_t w3 = (t4 >> 32) | (t5 << 8) | (t6 << 48);
+            uint64_t w4 = (t6 >> 16) | (t7 << 24);
+            uint64_t w5 = t8 | (t9 << 40);
+            uint64_t w6 = (t9 >> 24) | (t10 << 16) | (t11 << 56);
+            uint64_t w7 = (t11 >> 8) | (t12 << 32);
+            float32x4_t bs0 = vaddq_f32(neon_ternary8_f32(w0, xb + 0), neon_ternary8_f32(w1, xb + 8));
+            float32x4_t bs1 = vaddq_f32(neon_ternary8_f32(w2, xb + 16), neon_ternary8_f32(w3, xb + 24));
+            float32x4_t bs2 = vaddq_f32(neon_ternary8_f32(w4, xb + 32), neon_ternary8_f32(w5, xb + 40));
+            float32x4_t bs3 = vaddq_f32(neon_ternary8_f32(w6, xb + 48), neon_ternary8_f32(w7, xb + 56));
+            float32x4_t bs = vaddq_f32(vaddq_f32(bs0, bs1), vaddq_f32(bs2, bs3));
+            sum = V3_NEON_FMADD(sum, vdupq_n_f32(g_f16[rd16(p)]), bs);
+        }
+        acc = hsum_neon(sum);
+#else
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 15) {
+            const float *xb = x + b * 64u;
+            float s = 0.0f;
+            for (uint32_t m = 0; m < 12; m++) {
+                const int8_t *tv = g_trit5[p[2 + m]];
+                for (uint32_t k = 0; k < 5; k++) {
+                    float xv = xb[5 * m + k];
+                    s += tv[k] > 0 ? xv : (tv[k] < 0 ? -xv : 0.0f);
+                }
+            }
+            const int8_t *tv12 = g_trit5[p[14]];
+            for (uint32_t k = 0; k < 4; k++) {
+                float xv = xb[60 + k];
+                s += tv12[k] > 0 ? xv : (tv12[k] < 0 ? -xv : 0.0f);
+            }
+            acc += g_f16[rd16(p)] * s;
+        }
+#endif
+        break;
+    }
     default: break;
     }
     return acc;
@@ -806,6 +977,38 @@ static void embed_row(float *out, const v3_tensor *w, uint32_t r) {
                 out[b * QK + j] = dsc * (float)g_p4_lut[p[2 + j] & 0x0F];
                 out[b * QK + j + QK / 2] = dsc * (float)g_p4_lut[p[2 + j] >> 4];
             }
+        }
+        break;
+    }
+    case V3_T1_58_G32: {
+        const uint8_t *p = w->data + (uint64_t)r * (cols / QK) * 9u;
+        for (uint32_t b = 0; b < cols / QK; b++, p += 9) {
+            float dsc = g_f16[rd16(p)];
+            float *ob = out + b * QK;
+            for (uint32_t m = 0; m < 6; m++) {
+                const int8_t *tv = g_trit5[p[2 + m]];
+                for (uint32_t k = 0; k < 5; k++)
+                    ob[5 * m + k] = tv[k] > 0 ? dsc : (tv[k] < 0 ? -dsc : 0.0f);
+            }
+            const int8_t *tv6 = g_trit5[p[8]];
+            ob[30] = tv6[0] > 0 ? dsc : (tv6[0] < 0 ? -dsc : 0.0f);
+            ob[31] = tv6[1] > 0 ? dsc : (tv6[1] < 0 ? -dsc : 0.0f);
+        }
+        break;
+    }
+    case V3_T1_58_G64: {
+        const uint8_t *p = w->data + (uint64_t)r * (cols / 64u) * 15u;
+        for (uint32_t b = 0; b < cols / 64u; b++, p += 15) {
+            float dsc = g_f16[rd16(p)];
+            float *ob = out + b * 64u;
+            for (uint32_t m = 0; m < 12; m++) {
+                const int8_t *tv = g_trit5[p[2 + m]];
+                for (uint32_t k = 0; k < 5; k++)
+                    ob[5 * m + k] = tv[k] > 0 ? dsc : (tv[k] < 0 ? -dsc : 0.0f);
+            }
+            const int8_t *tv12 = g_trit5[p[14]];
+            for (uint32_t k = 0; k < 4; k++)
+                ob[60 + k] = tv12[k] > 0 ? dsc : (tv12[k] < 0 ? -dsc : 0.0f);
         }
         break;
     }

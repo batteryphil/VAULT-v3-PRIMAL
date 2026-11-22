@@ -27,14 +27,26 @@ ALIGN = 64
 ENDIAN_TAG = 0x01020304
 
 # dtypes
-F32, F16, BF16, Q8_0, Q4_0, P4_0 = 0, 1, 2, 8, 9, 10
-DTYPE_NAMES = {F32: "F32", F16: "F16", BF16: "BF16", Q8_0: "Q8_0", Q4_0: "Q4_0", P4_0: "P4_0"}
-QK = 32  # block size for Q8_0 / Q4_0 / P4_0
+F32, F16, BF16, Q8_0, Q4_0, P4_0, T1_58_G32, T1_58_G64 = 0, 1, 2, 8, 9, 10, 11, 12
+DTYPE_NAMES = {
+    F32: "F32", F16: "F16", BF16: "BF16", Q8_0: "Q8_0", Q4_0: "Q4_0", P4_0: "P4_0",
+    T1_58_G32: "T1_58_G32", T1_58_G64: "T1_58_G64",
+}
+QK = 32  # block size for Q8_0 / Q4_0 / P4_0 / T1_58_G32
+QK64 = 64  # block size for T1_58_G64 (1.875 bpw including FP16 scale)
 
 # 16-level Prime-Harmonic int8 LUT (p_k^-0.40 cumulative prime reciprocals for first 8 primes,
 # exact 0 at index 8; decoded in 1 cycle via AVX2 VPSHUFB in runtime/vault3.c).
 P4_LUT_I8 = np.array([-127, -101, -80, -62, -46, -33, -21, -10, 0, 10, 21, 33, 46, 62, 80, 101], dtype=np.int8)
 P4_LUT_F32 = P4_LUT_I8.astype(np.float32)
+
+# Base-3 5-trits-per-byte lookup table (3^5 = 243 <= 256): u_k = q_k + 1 in {0, 1, 2}
+_TRIT5_DEC = np.zeros((256, 5), dtype=np.int8)
+for _bi in range(243):
+    _v = _bi
+    for _k in range(5):
+        _TRIT5_DEC[_bi, _k] = (_v % 3) - 1
+        _v //= 3
 
 # tensor ids: (layer + 1) << 8 | kind for per-layer tensors, kind only for global tensors
 G_EMBED, G_NORM, G_LM_HEAD = 1, 2, 3
@@ -98,11 +110,13 @@ def tensor_name(tid: int) -> str:
 
 
 # ==============================================================================
-# Quantization (block layouts identical to GGML Q8_0 / Q4_0 + Prime-Harmonic P4_0)
+# Quantization (GGML Q8_0 / Q4_0 + Prime-Harmonic P4_0 + Base-3 Ternary 1.58-Bit)
 # ==============================================================================
 
-Q8_DT = np.dtype([("d", "<f2"), ("q", "i1", (QK,))])   # 34 bytes / 32 weights
-Q4_DT = np.dtype([("d", "<f2"), ("q", "u1", (QK // 2,))])  # 18 bytes / 32 weights
+Q8_DT = np.dtype([("d", "<f2"), ("q", "i1", (QK,))])          # 34 bytes / 32 weights
+Q4_DT = np.dtype([("d", "<f2"), ("q", "u1", (QK // 2,))])     # 18 bytes / 32 weights
+T1_58_G32_DT = np.dtype([("d", "<f2"), ("q", "u1", (7,))])    #  9 bytes / 32 weights (2.250 bpw w/ scale)
+T1_58_G64_DT = np.dtype([("d", "<f2"), ("q", "u1", (13,))])   # 15 bytes / 64 weights (1.875 bpw w/ scale)
 
 
 def quantize_q8_0(w: np.ndarray) -> bytes:
@@ -218,6 +232,79 @@ def dequantize_p4_0(buf: bytes, n: int) -> np.ndarray:
     return (q * b["d"].astype(np.float32)[:, None]).reshape(-1)
 
 
+def pack_t1_58(q_i8: np.ndarray, d_f16: np.ndarray, group_size: int) -> bytes:
+    """
+    Losslessly pack exact ternary trits q_i8 in {-1, 0, +1} and FP16 block scales d_f16
+    into V3_T1_58_G32 (group_size=32, 9B/blk) or V3_T1_58_G64 (group_size=64, 15B/blk).
+    """
+    assert group_size in (32, 64), f"unsupported ternary group_size={group_size}"
+    q = np.clip(q_i8.astype(np.int8), -1, 1).reshape(-1, group_size)
+    n_blk = q.shape[0]
+    d = d_f16.astype("<f2").reshape(n_blk)
+    n_bytes = 7 if group_size == 32 else 13
+    pad_len = n_bytes * 5 - group_size  # 3 for G=32 (35-32), 1 for G=64 (65-64)
+    if pad_len > 0:
+        q_pad = np.zeros((n_blk, n_bytes * 5), dtype=np.uint8)
+        q_pad[:, :group_size] = (q + 1).astype(np.uint8)
+        q_pad[:, group_size:] = 1  # u = 1 => trit 0 in unused tail slots
+    else:
+        q_pad = (q + 1).astype(np.uint8)
+    u5 = q_pad.reshape(n_blk, n_bytes, 5)
+    pk = (
+        u5[:, :, 0]
+        + 3 * u5[:, :, 1]
+        + 9 * u5[:, :, 2]
+        + 27 * u5[:, :, 3]
+        + 81 * u5[:, :, 4]
+    ).astype(np.uint8)
+    dt = T1_58_G32_DT if group_size == 32 else T1_58_G64_DT
+    out = np.empty(n_blk, dtype=dt)
+    out["d"] = d
+    out["q"] = pk
+    return out.tobytes()
+
+
+def _lloyd_ternary_quantize(w: np.ndarray, group_size: int) -> Tuple[np.ndarray, np.ndarray]:
+    x = w.astype(np.float32).reshape(-1, group_size)
+    d = np.maximum(x.abs().mean(axis=1) if hasattr(x, "abs") else np.abs(x).mean(axis=1), 1e-8)
+    # Initialize at 0.75 * max(|x|) so pre-quantized ternary tensors (w = q * d) recover exact (q, d) in 1 step!
+    amax = np.abs(x).max(axis=1)
+    d = np.where(amax > 0.0, amax, 0.0).astype(np.float32)
+    for _ in range(4):
+        inv = np.where(d > 0.0, 1.0 / np.where(d > 0.0, d, 1.0), 0.0)
+        q = np.clip(np.rint(x * inv[:, None]), -1.0, 1.0)
+        nz_cnt = (q != 0.0).sum(axis=1).astype(np.float32)
+        num = (x * q).sum(axis=1)
+        d = np.where(nz_cnt > 0.0, np.maximum(num / np.maximum(nz_cnt, 1.0), 0.0), 0.0)
+    d_f16 = d.astype(np.float16)
+    d_f32 = d_f16.astype(np.float32)
+    inv = np.where(d_f32 > 0.0, 1.0 / np.where(d_f32 > 0.0, d_f32, 1.0), 0.0)
+    q_i8 = np.clip(np.rint(x * inv[:, None]), -1.0, 1.0).astype(np.int8)
+    return q_i8, d_f16
+
+
+def quantize_t1_58_g32(w: np.ndarray) -> bytes:
+    q_i8, d_f16 = _lloyd_ternary_quantize(w, 32)
+    return pack_t1_58(q_i8, d_f16, 32)
+
+
+def quantize_t1_58_g64(w: np.ndarray) -> bytes:
+    q_i8, d_f16 = _lloyd_ternary_quantize(w, 64)
+    return pack_t1_58(q_i8, d_f16, 64)
+
+
+def dequantize_t1_58_g32(buf: bytes, n: int) -> np.ndarray:
+    b = np.frombuffer(buf, dtype=T1_58_G32_DT, count=n // QK)
+    trits = _TRIT5_DEC[b["q"]].reshape(-1, 35)[:, :32].astype(np.float32)
+    return (trits * b["d"].astype(np.float32)[:, None]).reshape(-1)
+
+
+def dequantize_t1_58_g64(buf: bytes, n: int) -> np.ndarray:
+    b = np.frombuffer(buf, dtype=T1_58_G64_DT, count=n // QK64)
+    trits = _TRIT5_DEC[b["q"]].reshape(-1, 65)[:, :64].astype(np.float32)
+    return (trits * b["d"].astype(np.float32)[:, None]).reshape(-1)
+
+
 def nbytes_for(dtype: int, n: int) -> int:
     if dtype == F32:
         return 4 * n
@@ -229,6 +316,12 @@ def nbytes_for(dtype: int, n: int) -> int:
     if dtype in (Q4_0, P4_0):
         assert n % QK == 0
         return (n // QK) * Q4_DT.itemsize
+    if dtype == T1_58_G32:
+        assert n % QK == 0
+        return (n // QK) * T1_58_G32_DT.itemsize
+    if dtype == T1_58_G64:
+        assert n % QK64 == 0
+        return (n // QK64) * T1_58_G64_DT.itemsize
     raise ValueError(dtype)
 
 
@@ -246,6 +339,10 @@ def encode_tensor(t: torch.Tensor, dtype: int) -> bytes:
         return quantize_q4_0(a.numpy())
     if dtype == P4_0:
         return quantize_p4_0(a.numpy())
+    if dtype == T1_58_G32:
+        return quantize_t1_58_g32(a.numpy())
+    if dtype == T1_58_G64:
+        return quantize_t1_58_g64(a.numpy())
     raise ValueError(dtype)
 
 
@@ -264,6 +361,10 @@ def decode_tensor(buf: bytes, dtype: int, shape: Tuple[int, ...]) -> torch.Tenso
         a = dequantize_q4_0(buf, n)
     elif dtype == P4_0:
         a = dequantize_p4_0(buf, n)
+    elif dtype == T1_58_G32:
+        a = dequantize_t1_58_g32(buf, n)
+    elif dtype == T1_58_G64:
+        a = dequantize_t1_58_g64(buf, n)
     else:
         raise ValueError(dtype)
     return torch.from_numpy(a.reshape(shape))
@@ -378,13 +479,25 @@ def choose_dtype(name: str, fmt: str, n_layers: int = 0) -> int:
     if fmt == "f32":
         return F32
     if name in ("embed_tokens.weight", "lm_head.weight"):
-        return {"bf16": BF16, "q8_0": Q8_0, "q4_0": Q8_0, "p4_0": Q8_0}[fmt]   # embed & output head stay >= 8-bit
+        if fmt in ("t1_58_hybrid", "t1_58_g64"):
+            return P4_0
+        return {"bf16": BF16, "q8_0": Q8_0, "q4_0": Q8_0, "p4_0": Q8_0}[fmt]   # embed & output head stay >= 8-bit in 4/8-bit modes
     if name.startswith("layers."):
         _, li_s, kind = name.split(".", 2)
         li = int(li_s)
     else:
         li, kind = -1, name
     if kind in MATMUL_KINDS:
+        if fmt == "t1_58_hybrid":
+            if kind in ("self_attn.k_proj.weight", "self_attn.v_proj.weight"):
+                return Q8_0
+            if kind in ("self_attn.q_proj.weight", "self_attn.o_proj.weight"):
+                return Q8_0 if (n_layers >= 8 and li in (0, 1, n_layers - 2, n_layers - 1)) else P4_0
+            return T1_58_G32
+        if fmt == "t1_58_g64":
+            if kind in ("self_attn.k_proj.weight", "self_attn.v_proj.weight"):
+                return Q8_0
+            return T1_58_G64
         if fmt in ("q4_0", "p4_0"):
             # Keep 6:1 GQA KV projections (+11.6 MB) and boundary Q/O projections (+9.4 MB) in Q8_0
             if kind in ("self_attn.k_proj.weight", "self_attn.v_proj.weight"):
@@ -395,17 +508,30 @@ def choose_dtype(name: str, fmt: str, n_layers: int = 0) -> int:
     return F32  # norms, biases, segment scorer LayerNorm/biases (small)
 
 
-def write_vlt3(path: str, state: Dict[str, torch.Tensor], cfg, tokenizer_dir: str, fmt: str, model_name: str = "VAULT-v3") -> Dict:
+def write_vlt3(
+    path: str,
+    state: Dict[str, torch.Tensor],
+    cfg,
+    tokenizer_dir: str,
+    fmt: str,
+    model_name: str = "VAULT-v3",
+    prepacked: Optional[Dict[str, Tuple[int, bytes]]] = None,
+) -> Dict:
     names = sorted(state.keys(), key=tensor_id)
     entries = []
     blobs = []
     n_layers_cfg = int(getattr(cfg, "n_layers", 0))
     for nm in names:
         t = state[nm]
-        dt = choose_dtype(nm, fmt, n_layers=n_layers_cfg)
-        if dt in (Q8_0, Q4_0, P4_0) and t.shape[-1] % QK != 0:
-            dt = BF16
-        data = encode_tensor(t, dt)
+        if prepacked is not None and nm in prepacked:
+            dt, data = prepacked[nm]
+        else:
+            dt = choose_dtype(nm, fmt, n_layers=n_layers_cfg)
+            if dt in (Q8_0, Q4_0, P4_0, T1_58_G32) and t.shape[-1] % QK != 0:
+                dt = BF16
+            elif dt == T1_58_G64 and t.shape[-1] % QK64 != 0:
+                dt = BF16
+            data = encode_tensor(t, dt)
         assert len(data) == nbytes_for(dt, t.numel())
         dims = list(t.shape) + [1] * (4 - t.dim())
         entries.append(dict(id=tensor_id(nm), dtype=dt, ndim=t.dim(), dims=dims, nbytes=len(data), crc=zlib.crc32(data), name=nm))
@@ -432,6 +558,10 @@ def write_vlt3(path: str, state: Dict[str, torch.Tensor], cfg, tokenizer_dir: st
     seg_min = int(getattr(cfg, "seg_min", 16)) if seg_n_feat > 0 else 0
     seg_max = int(getattr(cfg, "seg_max", 48)) if seg_n_feat > 0 else 0
     flags = (1 if cfg.tie_embeddings else 0) | (4 if seg_n_feat > 0 else 0)
+    fmt_map = {
+        "f32": F32, "bf16": BF16, "q8_0": Q8_0, "q4_0": Q4_0, "p4_0": P4_0,
+        "t1_58_hybrid": T1_58_G32, "t1_58_g64": T1_58_G64,
+    }
     hdr_vals = dict(
         magic=MAGIC, version=VERSION, header_size=HEADER_SIZE, endian_tag=ENDIAN_TAG,
         file_size=file_size, alignment=ALIGN, n_tensors=len(entries),
@@ -442,7 +572,7 @@ def write_vlt3(path: str, state: Dict[str, torch.Tensor], cfg, tokenizer_dir: st
         n_banks=0, primes=primes, n_cells=0,
         rms_eps=cfg.rms_eps, rope_theta=cfg.rope_theta, vault_eps=0.0,
         bos_id=ids["bos"], eos_id=ids["eos"], im_start_id=ids["im_start"], im_end_id=ids["im_end"], pad_id=ids["pad"],
-        weight_format={"f32": F32, "bf16": BF16, "q8_0": Q8_0, "q4_0": Q4_0, "p4_0": P4_0}[fmt], flags=flags,
+        weight_format=fmt_map[fmt], flags=flags,
         model_name=model_name.encode("utf-8")[:63],
         n_sink=int(getattr(cfg, "n_sink", 0)),
         seg_budget=seg_budget if seg_n_feat > 0 else 0,
@@ -513,6 +643,14 @@ def _check_finite_payload(buf: memoryview, dt: int, n: int, tid: int) -> None:
         b = np.frombuffer(buf, dtype=Q4_DT, count=n // QK)
         if not np.isfinite(b["d"]).all():
             raise VLT3Error(f"tensor {tid}: non-finite {DTYPE_NAMES[dt]} scale")
+    elif dt == T1_58_G32:
+        b = np.frombuffer(buf, dtype=T1_58_G32_DT, count=n // QK)
+        if not np.isfinite(b["d"]).all():
+            raise VLT3Error(f"tensor {tid}: non-finite T1_58_G32 scale")
+    elif dt == T1_58_G64:
+        b = np.frombuffer(buf, dtype=T1_58_G64_DT, count=n // QK64)
+        if not np.isfinite(b["d"]).all():
+            raise VLT3Error(f"tensor {tid}: non-finite T1_58_G64 scale")
 
 
 def read_vlt3(path: str, check_crc: bool = True) -> VLT3File:
