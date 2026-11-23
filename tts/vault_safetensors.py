@@ -75,11 +75,24 @@ def save_vault_safetensors(
 
 
 @torch.no_grad()
-def load_vault_safetensors(model: nn.Module, path: str, device: str = "cpu") -> Dict[str, str]:
+def load_vault_safetensors(
+    model: nn.Module,
+    path: str,
+    device: str = "cpu",
+    packed_cpu: bool = False,
+    fuse_dit_qkv: bool = False,
+) -> Dict[str, str]:
     """
     Unpacks a `VAULT-SafeTensors v1` checkpoint (`V3_P4_0` and/or `V3_Q2_0` + `FP16` norms/heads)
-    directly into `model` on `device`. Works on CPU, CUDA, ROCm, and Apple MPS.
+    directly into `model` on `device`. When `device == "cpu"` and `packed_cpu=True`, keeps weights
+    permanently bit-packed in CPU cache/RAM via `vault_cpu_engine.load_vault_safetensors_cpu_live`.
     """
+    if packed_cpu and str(device) == "cpu":
+        from tts.vault_cpu_engine import load_vault_safetensors_cpu_live
+
+        info = load_vault_safetensors_cpu_live(model, path, fuse_dit_qkv=fuse_dit_qkv)
+        return {k: str(v) for k, v in info.items()}
+
     unpack_dev = device if str(device).startswith("cuda") else "cpu"
     lut_t = torch.tensor(P4_LUT_VALUES, device=unpack_dev, dtype=torch.float32)
     param_dict = dict(model.named_parameters())
