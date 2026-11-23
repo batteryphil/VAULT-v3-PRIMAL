@@ -1,0 +1,152 @@
+{
+  "12_sentence_trifecta": {
+    "Tiny-Voca-4.5M:p4_0": {
+      "before": {
+        "whisper_wer_pct": 3.95,
+        "whisper_cer_pct": 3.69,
+        "log_mel_distortion_db": 0.0,
+        "stft_spectral_convergence": 0.0,
+        "audio_seconds": 61.11,
+        "wall_seconds": 2.91,
+        "x_realtime": 20.97,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "after_cpu": {
+        "whisper_wer_pct": 3.95,
+        "whisper_cer_pct": 3.69,
+        "log_mel_distortion_db": 0.013,
+        "stft_spectral_convergence": 0.0033,
+        "audio_seconds": 61.11,
+        "wall_seconds": 0.48,
+        "x_realtime": 127.14,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "cpu_ram_mb": 2.77
+    },
+    "Tiny-Voca-4.5M:q2_0": {
+      "before": {
+        "whisper_wer_pct": 3.95,
+        "whisper_cer_pct": 3.69,
+        "log_mel_distortion_db": 0.0,
+        "stft_spectral_convergence": 0.0,
+        "audio_seconds": 61.16,
+        "wall_seconds": 0.72,
+        "x_realtime": 84.52,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "after_cpu": {
+        "whisper_wer_pct": 3.95,
+        "whisper_cer_pct": 3.69,
+        "log_mel_distortion_db": 0.008,
+        "stft_spectral_convergence": 0.0041,
+        "audio_seconds": 61.16,
+        "wall_seconds": 0.48,
+        "x_realtime": 126.22,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "cpu_ram_mb": 1.52
+    },
+    "VITS-29M:p4_0": {
+      "before": {
+        "whisper_wer_pct": 14.12,
+        "whisper_cer_pct": 7.74,
+        "log_mel_distortion_db": 0.0,
+        "stft_spectral_convergence": 0.0,
+        "audio_seconds": 73.84,
+        "wall_seconds": 71.61,
+        "x_realtime": 1.03,
+        "sample_transcript_0": "hello this is a full text to speech quantization bentwork running locally on consumer hardware"
+      },
+      "after_cpu": {
+        "whisper_wer_pct": 15.82,
+        "whisper_cer_pct": 7.29,
+        "log_mel_distortion_db": 3.896,
+        "stft_spectral_convergence": 0.8207,
+        "audio_seconds": 73.84,
+        "wall_seconds": 8.06,
+        "x_realtime": 9.17,
+        "sample_transcript_0": "hill this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "cpu_ram_mb": 19.07
+    },
+    "VITS-29M:q2_0": {
+      "before": {
+        "whisper_wer_pct": 19.77,
+        "whisper_cer_pct": 10.17,
+        "log_mel_distortion_db": 0.0,
+        "stft_spectral_convergence": 0.0,
+        "audio_seconds": 76.61,
+        "wall_seconds": 67.14,
+        "x_realtime": 1.14,
+        "sample_transcript_0": "the loop this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "after_cpu": {
+        "whisper_wer_pct": 23.73,
+        "whisper_cer_pct": 12.15,
+        "log_mel_distortion_db": 2.576,
+        "stft_spectral_convergence": 0.4553,
+        "audio_seconds": 76.61,
+        "wall_seconds": 8.13,
+        "x_realtime": 9.43,
+        "sample_transcript_0": "this is a full test to speech quantization benchmark running locally on consumer hardware"
+      },
+      "cpu_ram_mb": 11.49
+    },
+    "F5-TTS-337M:p4_0": {
+      "before": {
+        "whisper_wer_pct": 3.95,
+        "whisper_cer_pct": 3.69,
+        "log_mel_distortion_db": 0.0,
+        "stft_spectral_convergence": 0.0,
+        "audio_seconds": 115.18,
+        "wall_seconds": 178.0,
+        "x_realtime": 0.65,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "after_cpu": {
+        "whisper_wer_pct": 5.65,
+        "whisper_cer_pct": 4.05,
+        "log_mel_distortion_db": 16.424,
+        "stft_spectral_convergence": 1.1866,
+        "audio_seconds": 115.18,
+        "wall_seconds": 183.14,
+        "x_realtime": 0.63,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "cpu_ram_mb": 212.04
+    },
+    "F5-TTS-337M:q2_0": {
+      "before": {
+        "whisper_wer_pct": 12.43,
+        "whisper_cer_pct": 7.2,
+        "log_mel_distortion_db": 0.0,
+        "stft_spectral_convergence": 0.0,
+        "audio_seconds": 115.18,
+        "wall_seconds": 177.01,
+        "x_realtime": 0.65,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "after_cpu": {
+        "whisper_wer_pct": 10.17,
+        "whisper_cer_pct": 6.84,
+        "log_mel_distortion_db": 16.214,
+        "stft_spectral_convergence": 1.1665,
+        "audio_seconds": 115.18,
+        "wall_seconds": 224.6,
+        "x_realtime": 0.51,
+        "sample_transcript_0": "hello this is a full text to speech quantization benchmark running locally on consumer hardware"
+      },
+      "cpu_ram_mb": 158.96
+    }
+  },
+  "edge_cases": {
+    "short_1word_m_le_8": "PASS",
+    "paragraph_TinyVoca_wer_pct": 12.82,
+    "paragraph_VITS_wer_pct": 5.13,
+    "paragraph_F5-TTS_wer_pct": 0.0,
+    "f5_custom_16k_clone_before_gpu_wer_pct": 14.29,
+    "f5_custom_16k_clone_wer_pct": 14.29,
+    "f5_custom_16k_clone_transcript": "testing custom zero shot voice cloning from a 16 khz audio file on cpu",
+    "pure_pytorch_no_compiler_fallback": "PASS"
+  }
+}

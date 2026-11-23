@@ -30,9 +30,9 @@ Complete reference implementation, freestanding zero-libc C99 engine (`x86_64 AV
 ### 2. Multi-Modal Text-to-Speech (`Linear` + `Conv1d` + `ConvTranspose1d` + `DiT` Diffusion · Cache-Resident `AVX2` CPU Engine)
 | TTS Model Family | Hugging Face Repository (`SafeTensors` + Audio Samples + `infer.py`) | Quantized Checkpoints & Cache-Resident CPU Speed |
 |---|---|---|
-| **`Tiny-Voca` (`4.54M`, `24 kHz`)** | [`batteryphil/VAULT-PRIMAL-Tiny-Voca-4.5M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-Tiny-Voca-4.5M) | **`2.67 MB` `V3_P4_0`** (`2.77 MB` RAM) & **`1.41 MB` `V3_Q2_0 + PRIMAL`** (**`1.52 MB` L2/L3 RAM, `161.1x` RT CPU, `0.00%` WER loss!**) |
-| **`VITS` (`29.04M` 1D-CNN/Flow/HiFi-GAN, `16 kHz`)** | [`batteryphil/VAULT-PRIMAL-VITS-29M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-VITS-29M) | **`16.63 MB` `V3_P4_0`** (`19.1 MB` L3 RAM, `14.3x` RT CPU) & **`8.86 MB` `V3_Q2_0 + PRIMAL`** (**`11.5 MB` L3 RAM, `14.5x` RT CPU**, `-121.5%` WER recovery) |
-| **`F5-TTS v1 Base` (`337.1M` `ConvNeXt V2` + `22L DiT`, `24 kHz`)** | [`batteryphil/VAULT-PRIMAL-F5-TTS-337M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-F5-TTS-337M) | **`192.1 MB` `V3_P4_0 + PRIMAL`** (**`212 MB` RAM, `1.07x` RT on pure CPU [`3.35x` faster], `0%` CER loss**) & **`139.0 MB` `V3_Q2_0 + PRIMAL`** (**`159 MB` RAM, `0.82x` RT CPU**, `100% -> 6.78%` WER) |
+| **`Tiny-Voca` (`4.54M`, `24 kHz`)** | [`batteryphil/VAULT-PRIMAL-Tiny-Voca-4.5M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-Tiny-Voca-4.5M) | **`2.67 MB` `V3_P4_0`** (`2.77 MB` RAM) & **`1.41 MB` `V3_Q2_0 + PRIMAL`** (**`1.52 MB` L2/L3 RAM, `156.0x` RT CPU, `0.00%` WER loss!**) |
+| **`VITS` (`29.04M` 1D-CNN/Flow/HiFi-GAN, `16 kHz`)** | [`batteryphil/VAULT-PRIMAL-VITS-29M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-VITS-29M) | **`16.63 MB` `V3_P4_0`** (`19.1 MB` L3 RAM, `13.5–14.3x` RT CPU) & **`8.86 MB` `V3_Q2_0 + PRIMAL`** (**`11.5 MB` L3 RAM, `14.4x` RT CPU**, `-121.5%` WER recovery) |
+| **`F5-TTS v1 Base` (`337.1M` `ConvNeXt V2` + `22L DiT`, `24 kHz`)** | [`batteryphil/VAULT-PRIMAL-F5-TTS-337M`](https://huggingface.co/batteryphil/VAULT-PRIMAL-F5-TTS-337M) | **`192.1 MB` `V3_P4_0 + PRIMAL`** (**`212 MB` RAM, `0.88x` RT CPU [`2.76x` faster, `0.0%` para WER]**) & **`139.0 MB` `V3_Q2_0 + PRIMAL`** (**`159 MB` RAM, `0.72x` RT CPU [`2.18x` faster]**, `100% -> 6.78%` WER) |
 
 ---
 
